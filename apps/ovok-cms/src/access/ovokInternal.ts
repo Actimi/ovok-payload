@@ -9,37 +9,51 @@ export const OVOK_TENANT_HEADER = 'x-ovok-tenant-id'
  * The Ovok NestJS backend is the only allowed caller. It has already
  * validated the Medplum JWT and the project's `content-enabled` setting.
  * We trust it by checking a shared secret header, then take the tenant
- * ID from a second header injected by the same proxy.
+ * (a Medplum Project UUID) from a second header.
  *
- * The synthetic user returned here is throwaway — Payload's user concept
- * is not used for authorisation; the multi-tenant plugin handles scoping
- * via the tenant field on every collection.
+ * The multi-tenant plugin scopes by Payload's internal integer tenant
+ * id, so we look up the row whose `medplumProjectId` matches the header
+ * value and pin the synthetic user to that row. Requests targeting an
+ * unknown medplumProjectId still authenticate (so /api/tenants creates
+ * can succeed), they just have no tenant scope until a row exists.
  */
 export const ovokInternalStrategy: AuthStrategy = {
   name: 'ovok-internal',
-  authenticate: async ({ headers }) => {
+  authenticate: async ({ headers, payload }) => {
     const presentedKey = headers.get(OVOK_INTERNAL_KEY_HEADER)
     const expectedKey = process.env.PAYLOAD_INTERNAL_API_KEY
     if (!expectedKey || presentedKey !== expectedKey) {
       return { user: null }
     }
 
-    const tenantId = headers.get(OVOK_TENANT_HEADER)
-    if (!tenantId) {
+    const medplumProjectId = headers.get(OVOK_TENANT_HEADER)
+    if (!medplumProjectId) {
       return { user: null }
     }
 
-    // Synthetic user — Payload's generated `User` type requires fields
-    // we don't (and won't) populate (timestamps, etc.) because no row
-    // exists in the users table. Cast to AuthStrategyResult to satisfy
-    // the strict generated typings; runtime access control only checks
-    // truthiness via Boolean(req.user).
+    let tenantPK: number | string | undefined
+    try {
+      const found = await payload.find({
+        collection: 'tenants',
+        where: { medplumProjectId: { equals: medplumProjectId } },
+        limit: 1,
+        overrideAccess: true,
+      })
+      tenantPK = found.docs[0]?.id
+    } catch (error) {
+      payload.logger.warn(
+        `ovok-internal: tenant lookup failed for medplumProjectId=${medplumProjectId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      )
+    }
+
     return {
       user: {
-        id: `ovok-proxy:${tenantId}`,
+        id: `ovok-proxy:${medplumProjectId}`,
         collection: 'users',
         email: 'proxy@ovok.local',
-        tenants: [{ tenant: tenantId }],
+        tenants: tenantPK ? [{ tenant: tenantPK }] : [],
       },
     } as unknown as AuthStrategyResult
   },
