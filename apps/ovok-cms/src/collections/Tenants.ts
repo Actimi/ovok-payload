@@ -12,9 +12,12 @@ export const Tenants: CollectionConfig = {
     strategies: [ovokInternalStrategy],
   },
   access: {
-    read: () => true,
-    create: () => true,
-    update: () => true,
+    // The ovok-internal strategy returns user: null when the request
+    // doesn't carry x-ovok-internal-key. Gate every write on req.user
+    // so anything reaching Payload outside the Ovok proxy is denied.
+    read: ({ req }) => Boolean(req.user),
+    create: ({ req }) => Boolean(req.user),
+    update: ({ req }) => Boolean(req.user),
     delete: () => false,
   },
   fields: [

@@ -6,10 +6,10 @@ export const Posts: CollectionConfig = {
     useAsTitle: 'title',
   },
   access: {
-    read: () => true,
-    create: () => true,
-    update: () => true,
-    delete: () => true,
+    read: ({ req }) => Boolean(req.user),
+    create: ({ req }) => Boolean(req.user),
+    update: ({ req }) => Boolean(req.user),
+    delete: ({ req }) => Boolean(req.user),
   },
   fields: [
     { name: 'title', type: 'text', required: true },
