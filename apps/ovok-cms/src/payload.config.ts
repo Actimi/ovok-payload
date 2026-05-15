@@ -56,6 +56,13 @@ export default buildConfig({
         includeDefaultField: false,
       },
       userHasAccessToAllTenants: () => false,
+      // Access to the Tenants collection is managed by our own auth
+      // strategy and the collection's own access fns — the plugin's
+      // built-in constraint (which filters by the user's tenants array)
+      // would 403 the bootstrap "create first tenant" call.
+      useTenantsCollectionAccess: false,
+      useTenantsListFilter: false,
+      useUsersTenantFilter: false,
     }),
   ],
   typescript: {
