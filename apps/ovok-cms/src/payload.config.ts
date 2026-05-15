@@ -65,14 +65,4 @@ export default buildConfig({
   cors: '*',
   csrf: [],
   endpoints: [schemaEndpoint],
-  // First-deploy bootstrap: gated by env so it doesn't run every time
-  // and surprise us with destructive diffs. Unset PAYLOAD_PUSH_ON_INIT
-  // after the database is initialised and switch to migrations.
-  onInit: async (payload) => {
-    if (process.env.PAYLOAD_PUSH_ON_INIT === 'true' && payload.db.push) {
-      payload.logger.info('PAYLOAD_PUSH_ON_INIT=true — pushing schema to the database')
-      await payload.db.push()
-      payload.logger.info('Schema push complete')
-    }
-  },
 })
