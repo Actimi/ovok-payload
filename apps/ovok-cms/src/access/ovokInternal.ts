@@ -1,4 +1,4 @@
-import type { AuthStrategy } from 'payload'
+import type { AuthStrategy, AuthStrategyResult } from 'payload'
 
 export const OVOK_INTERNAL_KEY_HEADER = 'x-ovok-internal-key'
 export const OVOK_TENANT_HEADER = 'x-ovok-tenant-id'
@@ -29,6 +29,11 @@ export const ovokInternalStrategy: AuthStrategy = {
       return { user: null }
     }
 
+    // Synthetic user — Payload's generated `User` type requires fields
+    // we don't (and won't) populate (timestamps, etc.) because no row
+    // exists in the users table. Cast to AuthStrategyResult to satisfy
+    // the strict generated typings; runtime access control only checks
+    // truthiness via Boolean(req.user).
     return {
       user: {
         id: `ovok-proxy:${tenantId}`,
@@ -36,6 +41,6 @@ export const ovokInternalStrategy: AuthStrategy = {
         email: 'proxy@ovok.local',
         tenants: [{ tenant: tenantId }],
       },
-    }
+    } as unknown as AuthStrategyResult
   },
 }
