@@ -22,6 +22,10 @@ export default buildConfig({
     pool: {
       connectionString: process.env.DATABASE_URI || process.env.DATABASE_URL || '',
     },
+    // Bootstrap mode: let Payload sync schema directly until we generate
+    // initial migrations. Flip to false (or unset) once the migration
+    // workflow is in place.
+    push: true,
   }),
   editor: lexicalEditor(),
   admin: {
