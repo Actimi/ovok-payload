@@ -65,4 +65,23 @@ export default buildConfig({
   cors: '*',
   csrf: [],
   endpoints: [schemaEndpoint],
+  // First-deploy bootstrap: env-gated so it doesn't run every time and
+  // surprise us with destructive diffs. Unset PAYLOAD_PUSH_ON_INIT after
+  // the database is initialised and switch to migrations.
+  //
+  // The postgres adapter exposes `push` at runtime, but Payload v3's
+  // public `payload.db` type only models the config-time `push: boolean`
+  // option, so we cast to call it.
+  onInit: async (payload) => {
+    if (process.env.PAYLOAD_PUSH_ON_INIT === 'true') {
+      const push = (payload.db as unknown as { push?: () => Promise<void> }).push
+      if (typeof push === 'function') {
+        payload.logger.info('PAYLOAD_PUSH_ON_INIT=true — pushing schema to the database')
+        await push.call(payload.db)
+        payload.logger.info('Schema push complete')
+      } else {
+        payload.logger.warn('PAYLOAD_PUSH_ON_INIT=true but payload.db.push is not a function; skipping')
+      }
+    }
+  },
 })
