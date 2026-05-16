@@ -17,6 +17,20 @@ export const ContentItems: CollectionConfig = {
     useAsTitle: 'title',
     defaultColumns: ['title', 'contentType', 'status', 'updatedAt'],
   },
+  // Compound btree indexes for the hot filter combinations. The
+  // public delivery list + slug-lookup endpoints filter by
+  // (content_type, status) and (content_type, slug), and the
+  // dashboard's list view does the same. Without these the planner
+  // would do a seq scan even on a few thousand rows per content type.
+  //
+  // The GIN index on the `data` JSONB column is added separately via
+  // `onInit` in payload.config.ts — Payload doesn't expose a GIN
+  // option on field-level indexes, but raw SQL via the drizzle pool
+  // works cleanly + idempotently.
+  indexes: [
+    { fields: ['contentType', 'status'] },
+    { fields: ['contentType', 'slug'] },
+  ],
   access: {
     read: ({ req }) => Boolean(req.user),
     create: ({ req }) => Boolean(req.user),

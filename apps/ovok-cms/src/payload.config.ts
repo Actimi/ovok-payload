@@ -13,6 +13,7 @@ import { Tenants } from './collections/Tenants'
 import { Users } from './collections/Users'
 import { schemaEndpoint } from './endpoints/schema'
 import { statsEndpoint } from './endpoints/stats'
+import { ensureContentItemIndexes } from './init/ensureContentItemIndexes'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -75,4 +76,10 @@ export default buildConfig({
   cors: '*',
   csrf: [],
   endpoints: [schemaEndpoint, statsEndpoint],
+  // Schema sync runs first via push: true; we then layer on the
+  // additional GIN + composite indexes that Payload's schema sync
+  // doesn't generate. Idempotent.
+  onInit: async (payload) => {
+    await ensureContentItemIndexes(payload)
+  },
 })
