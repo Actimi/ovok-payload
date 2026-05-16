@@ -1,0 +1,82 @@
+# Local development stack for ovok-cms.
+#
+# Starts:
+#   * Postgres 16 (named volume, healthcheck, port 5433 on host)
+#   * Payload + Next.js dev server (hot reload, port 3001 on host)
+#
+# Run:
+#   docker compose up                # foreground, logs in terminal
+#   docker compose up -d             # background
+#   docker compose down              # stop both
+#   docker compose down -v           # stop + wipe Postgres data
+#
+# First-time setup is slow (~2 min) — pnpm installs dependencies inside an
+# anonymous volume so the container builds against a Linux-native arch
+# rather than whatever the host has cached. Subsequent starts skip install.
+#
+# Env: a `.env` file in this directory is picked up automatically. See
+# `.env.docker.example` for the variables you might want to override —
+# especially `PAYLOAD_INTERNAL_API_KEY`, which MUST match the value set on
+# the ovok-internal backend so the proxy can authenticate.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ovok-cms-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: payload
+      POSTGRES_PASSWORD: payload
+      POSTGRES_DB: payload
+    ports:
+      - "5433:5432"
+    volumes:
+      - ovok_cms_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payload -d payload"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  payload:
+    image: node:24.15.0-alpine
+    container_name: ovok-cms-payload
+    working_dir: /app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3001:3000"
+    environment:
+      # Dev defaults; override via .env to point at a different Postgres or
+      # to change the shared internal key.
+      NODE_ENV: development
+      HOSTNAME: 0.0.0.0
+      DATABASE_URI: postgres://payload:payload@postgres:5432/payload
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET:-dev-not-a-real-secret-change-me}
+      PAYLOAD_INTERNAL_API_KEY: ${PAYLOAD_INTERNAL_API_KEY:-dev-internal-key-change-me}
+      PAYLOAD_PUBLIC_SERVER_URL: ${PAYLOAD_PUBLIC_SERVER_URL:-http://localhost:3001}
+    volumes:
+      # Bind the source for hot reload.
+      - ./:/app
+      # Mask the host's node_modules (Linux container needs its own native
+      # builds) and .next cache.
+      - ovok_cms_node_modules:/app/node_modules
+      - ovok_cms_next:/app/.next
+    # Activate the pinned pnpm, install deps if the volume is empty, then
+    # run `next dev` bound to 0.0.0.0 so the host can reach it.
+    command: >
+      sh -c "
+        corepack enable &&
+        corepack prepare pnpm@10.27.0 --activate &&
+        if [ ! -d node_modules/.pnpm ]; then
+          echo '> installing dependencies (first run)…';
+          pnpm install --prefer-offline;
+        fi &&
+        pnpm exec next dev --hostname 0.0.0.0 --port 3000
+      "
+
+volumes:
+  ovok_cms_postgres_data:
+  ovok_cms_node_modules:
+  ovok_cms_next:
