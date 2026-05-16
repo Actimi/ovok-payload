@@ -84,5 +84,18 @@ export const ContentItems: CollectionConfig = {
     ],
     beforeChange: [validateItemAgainstContentType],
   },
+  // Per-document revision history. We deliberately keep `drafts: false`
+  // here: ContentItems already has an explicit `status` field that's part
+  // of the application's publishing model. Layering Payload's separate
+  // draft/published state on top would create two competing meanings of
+  // "is this published?" — instead we just collect a version on every
+  // save so editors can review + restore a previous revision.
+  //
+  // maxPerDoc bounds storage growth — keep 50 most recent versions per
+  // item. Realistically editors revise an item far less than that, but
+  // long-lived content (legal pages, FAQs) can churn over years.
+  versions: {
+    maxPerDoc: 50,
+  },
   timestamps: true,
 }
