@@ -19,6 +19,8 @@ interface ContentTypeField {
   options?: { label: string; value: string }[]
   /** For `relationship` fields: the slug of the target content type. */
   relationTo?: string
+  /** When true the value is `{ [locale]: <perLocaleValue> }`. */
+  localized?: boolean
 }
 
 interface ContentTypeDoc {
@@ -100,6 +102,23 @@ export const validateItemAgainstContentType: CollectionBeforeChangeHook = async 
     }
 
     if (present) {
+      // Localized: each locale's value is validated through the
+      // single-value validator. Required passes when at least one
+      // locale is filled (already enforced above).
+      if (field.localized && isLocalizedShape(value)) {
+        for (const [locale, inner] of Object.entries(value as Record<string, unknown>)) {
+          if (!isPresent(inner)) continue
+          const typeError = validateFieldType(field, inner)
+          if (typeError) {
+            throw new Error(`"${field.label}" (${locale}): ${typeError}`)
+          }
+        }
+        // Unique on localized fields is intentionally not enforced —
+        // it'd require deciding which locale's value counts as the
+        // unique key. Out of scope for v1.
+        continue
+      }
+
       const typeError = validateFieldType(field, value)
       if (typeError) {
         throw new Error(`"${field.label}": ${typeError}`)
@@ -147,6 +166,20 @@ function isPresent(value: unknown): boolean {
   if (typeof value === 'string' && value.trim() === '') return false
   if (Array.isArray(value) && value.length === 0) return false
   return true
+}
+
+/**
+ * Cheap shape check for `{ [locale]: value }`. The validator uses this
+ * to decide whether to walk per-locale or apply single-value rules.
+ * We don't try to validate locale codes themselves — Medplum-style
+ * BCP-47 strings vary too widely; a wrong-locale value just won't be
+ * surfaced by the dashboard's matching public-delivery resolver.
+ */
+function isLocalizedShape(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const keys = Object.keys(value as Record<string, unknown>)
+  if (keys.length === 0) return false
+  return keys.some((k) => /^[a-z]{2,3}(-[A-Z]{2,4})?$/.test(k))
 }
 
 function validateFieldType(field: ContentTypeField, value: unknown): string | null {
