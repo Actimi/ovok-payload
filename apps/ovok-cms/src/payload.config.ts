@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url'
 
 import { ContentItems } from './collections/ContentItems'
 import { ContentTypes } from './collections/ContentTypes'
+import { EmailTemplates } from './collections/EmailTemplates'
 import { Media } from './collections/Media'
 import { Tenants } from './collections/Tenants'
 import { Users } from './collections/Users'
@@ -41,13 +42,14 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Tenants, Media, ContentTypes, ContentItems],
+  collections: [Users, Tenants, Media, ContentTypes, ContentItems, EmailTemplates],
   plugins: [
     multiTenantPlugin({
       collections: {
         media: {},
         'content-types': {},
         'content-items': {},
+        'email-templates': {},
       },
       tenantField: {
         access: {

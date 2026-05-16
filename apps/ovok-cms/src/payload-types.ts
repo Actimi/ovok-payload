@@ -73,6 +73,7 @@ export interface Config {
     media: Media;
     'content-types': ContentType;
     'content-items': ContentItem;
+    'email-templates': EmailTemplate;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -85,6 +86,7 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     'content-types': ContentTypesSelect<false> | ContentTypesSelect<true>;
     'content-items': ContentItemsSelect<false> | ContentItemsSelect<true>;
+    'email-templates': EmailTemplatesSelect<false> | EmailTemplatesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -301,6 +303,48 @@ export interface ContentItem {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "email-templates".
+ */
+export interface EmailTemplate {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  /**
+   * Stable identifier the backend uses to resolve this template. Lowercase, alphanumeric + dash. Examples: practitioner-invite, password-reset.
+   */
+  key: string;
+  /**
+   * Display name shown in the dashboard list.
+   */
+  name: string;
+  /**
+   * Optional. Notes about when this template fires and which variables it expects.
+   */
+  description?: string | null;
+  /**
+   * Email subject line. Supports {{variable}} placeholders, substituted at send-time.
+   */
+  subject: string;
+  /**
+   * HTML body. Supports {{variable}} placeholders. Keep inline styles — most clients strip <style> tags.
+   */
+  bodyHtml: string;
+  /**
+   * Plain-text fallback. Optional but strongly recommended — some clients render text-only.
+   */
+  bodyText?: string | null;
+  /**
+   * Optional sender override. Leave blank to use the system default (MAIL_FROM).
+   */
+  fromOverride?: string | null;
+  /**
+   * When off, the backend falls back to the legacy template flow for this key.
+   */
+  enabled?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -342,6 +386,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'content-items';
         value: number | ContentItem;
+      } | null)
+    | ({
+        relationTo: 'email-templates';
+        value: number | EmailTemplate;
       } | null);
   globalSlug?: string | null;
   user:
@@ -480,6 +528,23 @@ export interface ContentItemsSelect<T extends boolean = true> {
   slug?: T;
   status?: T;
   data?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "email-templates_select".
+ */
+export interface EmailTemplatesSelect<T extends boolean = true> {
+  tenant?: T;
+  key?: T;
+  name?: T;
+  description?: T;
+  subject?: T;
+  bodyHtml?: T;
+  bodyText?: T;
+  fromOverride?: T;
+  enabled?: T;
   updatedAt?: T;
   createdAt?: T;
 }
