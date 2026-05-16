@@ -34,11 +34,23 @@ export const statsEndpoint: Endpoint = {
   handler: async (req) => {
     const { payload, user } = req
     const tenantId = resolveTenantId(user)
+
+    // When the auth strategy didn't find a tenant row for this project
+    // — either because it hasn't been provisioned yet, or because it
+    // was provisioned in a different transaction that hasn't propagated
+    // — we return zero counts rather than 403. By the time the request
+    // reaches this endpoint the proxy guard has already confirmed CMS
+    // is enabled for the project; missing-tenant is an internal-state
+    // issue, not a 'feature off' condition. The dashboard then shows
+    // '0 items' instead of misleadingly saying 'Setting up'
+    // indefinitely, and the next item create/list request will trigger
+    // a fresh tenant lookup that succeeds once the provisioning
+    // transaction has committed.
     if (!tenantId) {
-      return Response.json(
-        { message: 'No tenant in context.' },
-        { status: 403 },
-      )
+      return Response.json({
+        tenantId: null,
+        counts: { contentItems: 0, media: 0, contentTypes: 0 },
+      })
     }
 
     // `payload.count` returns { totalDocs }. Each collection is queried
