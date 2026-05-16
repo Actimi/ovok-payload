@@ -3,11 +3,22 @@ import type { CollectionBeforeChangeHook } from 'payload'
 interface ContentTypeField {
   key: string
   label: string
-  type: 'text' | 'textarea' | 'richtext' | 'number' | 'checkbox' | 'date' | 'select' | 'media'
+  type:
+    | 'text'
+    | 'textarea'
+    | 'richtext'
+    | 'number'
+    | 'checkbox'
+    | 'date'
+    | 'select'
+    | 'media'
+    | 'relationship'
   required?: boolean
   unique?: boolean
   hasMany?: boolean
   options?: { label: string; value: string }[]
+  /** For `relationship` fields: the slug of the target content type. */
+  relationTo?: string
 }
 
 interface ContentTypeDoc {
@@ -182,6 +193,25 @@ function validateFieldType(field: ContentTypeField, value: unknown): string | nu
       if (!allValid) return 'must reference a media item by id.'
       if (!field.hasMany && Array.isArray(value)) {
         return 'expects a single media item, not a list.'
+      }
+      return null
+    }
+    case 'relationship': {
+      // Shape-only validation: target ids must be primitive (or
+      // expanded {id} objects from a depth>0 read). Cross-tenant /
+      // wrong-collection enforcement happens at read-time by the
+      // multi-tenant plugin's access functions, so we don't re-query
+      // here.
+      const ids = Array.isArray(value) ? value : [value]
+      const allValid = ids.every(
+        (v) =>
+          typeof v === 'string' ||
+          typeof v === 'number' ||
+          (typeof v === 'object' && v !== null && 'id' in (v as object)),
+      )
+      if (!allValid) return 'must reference an item by id.'
+      if (!field.hasMany && Array.isArray(value)) {
+        return 'expects a single related item, not a list.'
       }
       return null
     }
