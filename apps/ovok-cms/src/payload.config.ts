@@ -6,8 +6,9 @@ import { buildConfig } from 'payload'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
+import { ContentItems } from './collections/ContentItems'
+import { ContentTypes } from './collections/ContentTypes'
 import { Media } from './collections/Media'
-import { Posts } from './collections/Posts'
 import { Tenants } from './collections/Tenants'
 import { Users } from './collections/Users'
 import { schemaEndpoint } from './endpoints/schema'
@@ -38,12 +39,13 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Tenants, Media, Posts],
+  collections: [Users, Tenants, Media, ContentTypes, ContentItems],
   plugins: [
     multiTenantPlugin({
       collections: {
         media: {},
-        posts: {},
+        'content-types': {},
+        'content-items': {},
       },
       tenantField: {
         access: {

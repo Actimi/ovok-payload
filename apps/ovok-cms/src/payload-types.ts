@@ -71,7 +71,8 @@ export interface Config {
     users: User;
     tenants: Tenant;
     media: Media;
-    posts: Post;
+    'content-types': ContentType;
+    'content-items': ContentItem;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -82,7 +83,8 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     tenants: TenantsSelect<false> | TenantsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
-    posts: PostsSelect<false> | PostsSelect<true>;
+    'content-types': ContentTypesSelect<false> | ContentTypesSelect<true>;
+    'content-items': ContentItemsSelect<false> | ContentItemsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -195,30 +197,102 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "posts".
+ * via the `definition` "content-types".
  */
-export interface Post {
+export interface ContentType {
   id: number;
   tenant?: (number | null) | Tenant;
-  title: string;
+  /**
+   * Singular display name. Example: "FAQ entry".
+   */
+  name: string;
+  /**
+   * Plural display name. Example: "FAQ entries".
+   */
+  pluralName: string;
+  /**
+   * URL-safe identifier. Used in dashboard routes (/content/<slug>). Lowercase, no spaces.
+   */
   slug: string;
-  content?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
+  /**
+   * Optional. Shown to editors on the content type card.
+   */
+  description?: string | null;
+  /**
+   * Each entry becomes one input on the item form. Field key must be unique inside a content type.
+   */
+  fields?:
+    | {
+        /**
+         * Identifier used in the item data object. Lowercase, alphanumeric + underscore.
+         */
+        key: string;
+        /**
+         * Shown above the input in the dashboard.
+         */
+        label: string;
+        type: 'text' | 'textarea' | 'richtext' | 'number' | 'checkbox' | 'date' | 'select' | 'media';
+        required?: boolean | null;
+        /**
+         * No two items in this content type can have the same value for this field. Enforced per-tenant.
+         */
+        unique?: boolean | null;
+        /**
+         * For select and media: allow multiple values. Ignored for other types.
+         */
+        hasMany?: boolean | null;
+        /**
+         * Helper text shown under the field on the form.
+         */
+        description?: string | null;
+        /**
+         * Only used when type = "Select". Define the choices an editor can pick.
+         */
+        options?:
+          | {
+              label: string;
+              value: string;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "content-items".
+ */
+export interface ContentItem {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  /**
+   * Determines which fields this item carries. Cannot change after creation.
+   */
+  contentType: number | ContentType;
+  /**
+   * A short display title. Shown in lists and pickers. Defaults to the first text field if empty.
+   */
+  title: string;
+  /**
+   * Optional URL-safe identifier for this item.
+   */
+  slug?: string | null;
+  status?: ('draft' | 'published') | null;
+  /**
+   * The actual field values, keyed by the content-type field.key. Validated against the content-type schema before save.
+   */
+  data?:
+    | {
         [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  media?: (number | null) | Media;
-  publishedAt?: string | null;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -259,8 +333,12 @@ export interface PayloadLockedDocument {
         value: number | Media;
       } | null)
     | ({
-        relationTo: 'posts';
-        value: number | Post;
+        relationTo: 'content-types';
+        value: number | ContentType;
+      } | null)
+    | ({
+        relationTo: 'content-items';
+        value: number | ContentItem;
       } | null);
   globalSlug?: string | null;
   user:
@@ -355,15 +433,47 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "posts_select".
+ * via the `definition` "content-types_select".
  */
-export interface PostsSelect<T extends boolean = true> {
+export interface ContentTypesSelect<T extends boolean = true> {
   tenant?: T;
+  name?: T;
+  pluralName?: T;
+  slug?: T;
+  description?: T;
+  fields?:
+    | T
+    | {
+        key?: T;
+        label?: T;
+        type?: T;
+        required?: T;
+        unique?: T;
+        hasMany?: T;
+        description?: T;
+        options?:
+          | T
+          | {
+              label?: T;
+              value?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "content-items_select".
+ */
+export interface ContentItemsSelect<T extends boolean = true> {
+  tenant?: T;
+  contentType?: T;
   title?: T;
   slug?: T;
-  content?: T;
-  media?: T;
-  publishedAt?: T;
+  status?: T;
+  data?: T;
   updatedAt?: T;
   createdAt?: T;
 }
