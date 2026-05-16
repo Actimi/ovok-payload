@@ -113,9 +113,37 @@ export const validateItemAgainstContentType: CollectionBeforeChangeHook = async 
             throw new Error(`"${field.label}" (${locale}): ${typeError}`)
           }
         }
-        // Unique on localized fields is intentionally not enforced —
-        // it'd require deciding which locale's value counts as the
-        // unique key. Out of scope for v1.
+
+        // Unique on localized fields is enforced PER LOCALE: each
+        // locale slot is its own uniqueness column. Two items can
+        // share an English value if their German values differ. This
+        // matches editorial intent (each translation of a page is
+        // independently a slug / title), and the query is cheap —
+        // one Payload `find` per locale, gated by `field.unique`.
+        if (field.unique) {
+          for (const [locale, inner] of Object.entries(value as Record<string, unknown>)) {
+            if (!isPresent(inner)) continue
+            const conflict = await req.payload.find({
+              collection: 'content-items',
+              where: {
+                and: [
+                  { contentType: { equals: contentTypeId } },
+                  { [`data.${field.key}.${locale}`]: { equals: inner } },
+                  ...(operation === 'update' && originalDoc?.id
+                    ? [{ id: { not_equals: originalDoc.id } }]
+                    : []),
+                ],
+              },
+              limit: 1,
+              overrideAccess: true,
+            })
+            if (conflict.totalDocs > 0) {
+              throw new Error(
+                `"${field.label}" (${locale}) must be unique. Another item already uses this value.`,
+              )
+            }
+          }
+        }
         continue
       }
 
