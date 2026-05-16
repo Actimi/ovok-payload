@@ -12,6 +12,7 @@ import { Media } from './collections/Media'
 import { Tenants } from './collections/Tenants'
 import { Users } from './collections/Users'
 import { schemaEndpoint } from './endpoints/schema'
+import { statsEndpoint } from './endpoints/stats'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -73,5 +74,5 @@ export default buildConfig({
   sharp,
   cors: '*',
   csrf: [],
-  endpoints: [schemaEndpoint],
+  endpoints: [schemaEndpoint, statsEndpoint],
 })
