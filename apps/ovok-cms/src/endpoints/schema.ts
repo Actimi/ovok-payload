@@ -5,10 +5,10 @@ import type { Endpoint, Field, SanitizedCollectionConfig } from 'payload'
  * can render Payload-style CRUD forms without bundling Payload's admin UI.
  *
  * Reachable from outside the cluster via the Ovok proxy:
- *   GET /v1/content/_ovok/schema
+ *   GET /v1/content/api/_ovok/schema
  *
  * Direct access (inside the cluster, with internal-key header):
- *   GET /_ovok/schema
+ *   GET /api/_ovok/schema
  */
 
 interface NormalisedField {
@@ -87,12 +87,35 @@ const normaliseCollection = (collection: SanitizedCollectionConfig): NormalisedC
     .filter((f): f is NormalisedField => f !== null),
 })
 
+/**
+ * True when the collection has the `tenant` relationship field added by
+ * `@payloadcms/plugin-multi-tenant`. Used to filter the schema response so
+ * the dashboard only sees tenant-scoped content collections — never Payload
+ * internals (`payload-kv`, `payload-locked-documents`, `payload-preferences`,
+ * `payload-migrations`) or our own infra collections (`users`, `tenants`).
+ *
+ * Sources the list automatically from the plugin's runtime config so adding
+ * a new collection to `multiTenantPlugin({ collections: { … } })` in
+ * `payload.config.ts` makes it appear in the dashboard with no schema-side
+ * change.
+ */
+const isTenantScopedCollection = (config: SanitizedCollectionConfig): boolean =>
+  config.fields.some((field) => {
+    const f = field as { type?: string; name?: string; relationTo?: string }
+    return f.type === 'relationship' && f.name === 'tenant' && f.relationTo === 'tenants'
+  })
+
 export const schemaEndpoint: Endpoint = {
+  // Lives at `/api/_ovok/schema`. Payload's `root: true` would only affect
+  // Payload's internal routing, but the whole CMS is mounted at
+  // `/api/[...slug]` by the Next.js app router — anything outside `/api/`
+  // hits Next.js's 404. Callers (incl. the Ovok proxy) hit the `/api/`
+  // path.
   path: '/_ovok/schema',
   method: 'get',
   handler: async ({ payload }) => {
     const collections = Object.values(payload.collections)
-      .filter(({ config }) => config.slug !== 'tenants' && config.slug !== 'users')
+      .filter(({ config }) => isTenantScopedCollection(config))
       .map(({ config }) => normaliseCollection(config))
 
     return Response.json({ collections })
