@@ -1,24 +1,34 @@
 import type { Payload } from 'payload'
 
 /**
- * Postgres indexes we want on `content_items` that Payload's collection
- * config can't express directly.
+ * Postgres indexes for `content_items`.
  *
- * - GIN on `data` (jsonb_ops) — Payload's compound + field-level
- *   indexes are btree only, but JSONB columns benefit from a GIN
- *   index for `@>` containment queries. We also keep the index
- *   available for future operators (`?`, `?&`, `?|`) without needing
- *   another migration.
+ * Two key choices:
  *
- * Why `onInit` rather than a proper Drizzle migration: we're still in
- * the bootstrap `push: true` mode where Payload syncs schema on every
- * boot. A real `payload migrate` workflow lands once the schema
- * stabilises; the IF NOT EXISTS guards make this safe to run repeatedly
- * in the meantime + safe to leave in place after the migration system
- * takes over.
+ *  - **CREATE INDEX CONCURRENTLY**: the first time this runs on a busy
+ *    DB it has to scan every row. CONCURRENTLY does that without an
+ *    exclusive lock — writes keep flowing during creation. The cost
+ *    is two table passes instead of one, but for an `onInit` that
+ *    runs at boot (before the API is even accepting traffic) the
+ *    tradeoff is purely upside.
  *
- * Failures here log but don't crash boot — the application functions
- * without the indexes, just slower under load.
+ *  - **jsonb_path_ops** rather than jsonb_ops: smaller index (often
+ *    ~30% less disk), faster updates, and our access pattern only
+ *    uses `@>` containment — jsonb_path_ops covers exactly that one
+ *    operator and nothing else, which is the right specialisation.
+ *    The localized-unique check + future @>-based filters all use
+ *    `data @> '{path: value}'::jsonb` so the index is actually hit.
+ *
+ * CONCURRENTLY restrictions:
+ *  - Can't run inside a transaction. Drizzle's `execute(string)` does
+ *    NOT wrap raw strings in an implicit transaction (verified by
+ *    inspecting the postgres adapter — it pipes the SQL to the
+ *    underlying client directly).
+ *  - Doesn't compose with IF NOT EXISTS in older Postgres (< 11).
+ *    We require ≥ 11 in production; we use both.
+ *
+ * Runs idempotently: re-creating an existing index is cheap (Postgres
+ * checks the catalog first). Failures log without crashing boot.
  */
 export async function ensureContentItemIndexes(payload: Payload): Promise<void> {
   try {
@@ -33,38 +43,33 @@ export async function ensureContentItemIndexes(payload: Payload): Promise<void> 
       return
     }
 
-    // Each statement uses IF NOT EXISTS so re-running is a no-op once
-    // the index exists. Names follow the Postgres convention
-    // <table>_<columns>_<type>.
     const statements: string[] = [
-      // Broad GIN — supports `@>` (containment) for any future JSON
-      // queries we add. The localized-uniqueness path still uses
-      // Payload's `data->key->locale` filter which is a btree-style
-      // equality and benefits from the planner narrowing by the
-      // composite (content_type, status) index first.
-      "CREATE INDEX IF NOT EXISTS content_items_data_gin ON content_items USING GIN (data jsonb_ops)",
-      // Belt-and-braces composites in case Payload's compound index
-      // creation hasn't run yet on this DB (e.g. running this branch
-      // against a DB that predates the indexes:[] addition). Payload
-      // generates indexes named after its own convention; ours have
-      // distinct names so we don't collide.
-      "CREATE INDEX IF NOT EXISTS content_items_ct_status ON content_items (content_type_id, status)",
-      "CREATE INDEX IF NOT EXISTS content_items_ct_slug ON content_items (content_type_id, slug)",
-      // Tenant filter — the multi-tenant plugin adds `tenant_id`. A
-      // composite with content_type makes the per-tenant list reads
-      // single-index scans.
-      "CREATE INDEX IF NOT EXISTS content_items_tenant_ct ON content_items (tenant_id, content_type_id)",
+      // GIN with jsonb_path_ops — supports `@>` only (which is all we
+      // use) and stays small under heavy nested-JSON data.
+      'CREATE INDEX CONCURRENTLY IF NOT EXISTS content_items_data_gin_path ON content_items USING GIN (data jsonb_path_ops)',
+      'CREATE INDEX CONCURRENTLY IF NOT EXISTS content_items_ct_status ON content_items (content_type_id, status)',
+      'CREATE INDEX CONCURRENTLY IF NOT EXISTS content_items_ct_slug ON content_items (content_type_id, slug)',
+      'CREATE INDEX CONCURRENTLY IF NOT EXISTS content_items_tenant_ct ON content_items (tenant_id, content_type_id)',
+    ]
+
+    // Drop the previous jsonb_ops variant from before we knew we only
+    // needed @>. Cheap if it doesn't exist; reclaims ~30% disk if it
+    // does. Concurrent drop doesn't block readers/writers.
+    const dropOldStatements: string[] = [
+      'DROP INDEX CONCURRENTLY IF EXISTS content_items_data_gin',
     ]
 
     for (const stmt of statements) {
-      // drizzle.execute accepts a string or a sql template. Strings
-      // work fine for these DDL statements (no parameters).
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (drizzle.execute as any)(stmt)
+    }
+    for (const stmt of dropOldStatements) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (drizzle.execute as any)(stmt)
     }
 
     payload.logger.info(
-      `[ensureContentItemIndexes] verified ${statements.length} index${statements.length === 1 ? '' : 'es'}`,
+      `[ensureContentItemIndexes] verified ${statements.length} index${statements.length === 1 ? '' : 'es'} (CONCURRENTLY, jsonb_path_ops)`,
     )
   } catch (err) {
     payload.logger.error(

@@ -1,4 +1,5 @@
-import type { CollectionBeforeChangeHook } from 'payload'
+import { sql } from 'drizzle-orm'
+import type { CollectionBeforeChangeHook, PayloadRequest } from 'payload'
 
 interface ContentTypeField {
   key: string
@@ -123,21 +124,12 @@ export const validateItemAgainstContentType: CollectionBeforeChangeHook = async 
         if (field.unique) {
           for (const [locale, inner] of Object.entries(value as Record<string, unknown>)) {
             if (!isPresent(inner)) continue
-            const conflict = await req.payload.find({
-              collection: 'content-items',
-              where: {
-                and: [
-                  { contentType: { equals: contentTypeId } },
-                  { [`data.${field.key}.${locale}`]: { equals: inner } },
-                  ...(operation === 'update' && originalDoc?.id
-                    ? [{ id: { not_equals: originalDoc.id } }]
-                    : []),
-                ],
-              },
-              limit: 1,
-              overrideAccess: true,
+            const collision = await existsByContainment(req, {
+              contentTypeId,
+              containment: { [field.key]: { [locale]: inner } },
+              excludeId: operation === 'update' ? originalDoc?.id : undefined,
             })
-            if (conflict.totalDocs > 0) {
+            if (collision) {
               throw new Error(
                 `"${field.label}" (${locale}) must be unique. Another item already uses this value.`,
               )
@@ -153,21 +145,12 @@ export const validateItemAgainstContentType: CollectionBeforeChangeHook = async 
       }
 
       if (field.unique) {
-        const conflict = await req.payload.find({
-          collection: 'content-items',
-          where: {
-            and: [
-              { contentType: { equals: contentTypeId } },
-              { [`data.${field.key}`]: { equals: value } },
-              ...(operation === 'update' && originalDoc?.id
-                ? [{ id: { not_equals: originalDoc.id } }]
-                : []),
-            ],
-          },
-          limit: 1,
-          overrideAccess: true,
+        const collision = await existsByContainment(req, {
+          contentTypeId,
+          containment: { [field.key]: value },
+          excludeId: operation === 'update' ? originalDoc?.id : undefined,
         })
-        if (conflict.totalDocs > 0) {
+        if (collision) {
           throw new Error(`"${field.label}" must be unique. Another item already uses this value.`)
         }
       }
@@ -187,6 +170,88 @@ export const validateItemAgainstContentType: CollectionBeforeChangeHook = async 
   }
 
   return data
+}
+
+/**
+ * Containment-based uniqueness check that USES the GIN index.
+ *
+ * Payload's `find({ where: { 'data.foo.bar': { equals: x } } })` generates
+ * a path-extraction equality (`data->'foo'->>'bar' = '...'`) which the
+ * GIN index can't accelerate; the planner falls back to a seq scan over
+ * every row matching content_type_id. For tables of any meaningful
+ * size that's wasteful even with the (content_type_id, status) btree
+ * narrowing.
+ *
+ * Switching to `data @> '{"foo":{"bar":"x"}}'::jsonb` lets Postgres
+ * use the `content_items_data_gin_path` index (jsonb_path_ops) directly:
+ * one indexed lookup instead of a scan. The (content_type_id) filter
+ * still narrows so a tenant with many content types pays per-type.
+ *
+ * Containment on primitive scalars (string / number / bool) is exact
+ * equality at the matched path, which is what `unique:true` wants.
+ * For richtext / media / relationship fields, `unique:true` is either
+ * disallowed by the schema (richtext) or doesn't make sense to enforce
+ * here; the builder UI gates that.
+ */
+async function existsByContainment(
+  req: PayloadRequest,
+  args: {
+    contentTypeId: string | number
+    containment: Record<string, unknown>
+    excludeId?: string | number
+  },
+): Promise<boolean> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const drizzle = (req.payload.db as any).drizzle as
+    | { execute: (q: ReturnType<typeof sql>) => Promise<{ rows: unknown[] }> }
+    | undefined
+  if (!drizzle?.execute) {
+    // Safety net: if drizzle isn't available (unexpected at runtime),
+    // fall back to Payload's filter so uniqueness is still enforced —
+    // just slower. We never silently skip the check.
+    const fallback = await req.payload.find({
+      collection: 'content-items',
+      where: {
+        and: [
+          { contentType: { equals: args.contentTypeId } },
+          ...Object.entries(args.containment).flatMap(([k, v]) =>
+            v !== null && typeof v === 'object'
+              ? Object.entries(v as Record<string, unknown>).map(([k2, v2]) => ({
+                  [`data.${k}.${k2}`]: { equals: v2 },
+                }))
+              : [{ [`data.${k}`]: { equals: v } }],
+          ),
+          ...(args.excludeId !== undefined ? [{ id: { not_equals: args.excludeId } }] : []),
+        ],
+      },
+      limit: 1,
+      overrideAccess: true,
+    })
+    return fallback.totalDocs > 0
+  }
+
+  const containmentJson = JSON.stringify(args.containment)
+  // Two query shapes — with and without excludeId — kept separate so
+  // the planner can prepare each independently and so the empty
+  // sql`` template doesn't appear when there's no exclude.
+  const result =
+    args.excludeId !== undefined
+      ? await drizzle.execute(sql`
+          SELECT 1
+          FROM content_items
+          WHERE content_type_id = ${args.contentTypeId}
+            AND data @> ${containmentJson}::jsonb
+            AND id <> ${args.excludeId}
+          LIMIT 1
+        `)
+      : await drizzle.execute(sql`
+          SELECT 1
+          FROM content_items
+          WHERE content_type_id = ${args.contentTypeId}
+            AND data @> ${containmentJson}::jsonb
+          LIMIT 1
+        `)
+  return (result.rows ?? []).length > 0
 }
 
 function isPresent(value: unknown): boolean {
