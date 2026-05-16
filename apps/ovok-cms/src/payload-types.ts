@@ -183,6 +183,9 @@ export interface Media {
   id: number;
   tenant?: (number | null) | Tenant;
   alt?: string | null;
+  scanStatus?: ('skipped' | 'clean' | 'suspicious') | null;
+  scanProvider?: string | null;
+  scannedAt?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -419,6 +422,9 @@ export interface TenantsSelect<T extends boolean = true> {
 export interface MediaSelect<T extends boolean = true> {
   tenant?: T;
   alt?: T;
+  scanStatus?: T;
+  scanProvider?: T;
+  scannedAt?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
