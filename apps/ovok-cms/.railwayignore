@@ -1,0 +1,12 @@
+# Excluded from the Railway upload context. `railway up --path-as-root .`
+# packages this directory, but pnpm's local content store contains symlinks
+# that loop back to ancestor directories — Railway's tar walks them and
+# bails with "File system loop found." Excluding the store is safe because
+# the Dockerfile re-runs `pnpm install` from scratch inside the build.
+
+.pnpm-store
+node_modules
+.next
+.turbo
+.cache
+*.log

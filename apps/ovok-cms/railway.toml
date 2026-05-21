@@ -1,0 +1,12 @@
+[build]
+buildCommand = "pnpm build"
+
+[deploy]
+startCommand = "pnpm start"
+healthcheckPath = "/api/health"
+# Give Payload time to init + run push schema sync on cold start.
+healthcheckTimeout = 120
+restartPolicyType = "on_failure"
+# Enough retries to survive a transient Postgres restart without
+# filling the Railway incident log with noise.
+restartPolicyMaxRetries = 10
