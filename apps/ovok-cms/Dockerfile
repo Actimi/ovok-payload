@@ -22,8 +22,10 @@ FROM base AS deps
 RUN apk add --no-cache python3 make g++ vips-dev
 
 COPY package.json pnpm-lock.yaml ./
-RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile
+# NOTE: no BuildKit cache mount here — Railway's BuildKit wrapper requires a
+# cacheKey-prefixed id on `--mount=type=cache` and rejects the upstream form.
+# Install is fast enough cold (~30s) that we skip the speedup for portability.
+RUN pnpm install --frozen-lockfile
 
 # --- builder -------------------------------------------------------------
 FROM base AS builder
