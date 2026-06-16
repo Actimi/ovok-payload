@@ -2,6 +2,7 @@ import { postgresAdapter } from '@payloadcms/db-postgres'
 import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
+import type { PayloadRequest } from 'payload'
 import { buildConfig } from 'payload'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
@@ -51,6 +52,11 @@ export default buildConfig({
           // x-ovok-tenant-id header. Reject manual overrides on writes.
           update: () => false,
         },
+        // Assign the tenant from the proxy-authenticated user on create.
+        // The plugin's built-in default only auto-assigns from req.user when
+        // autosave is enabled; these collections have none, so without this
+        // every create fails validation with "Assigned Tenant is required".
+        defaultValue: ({ req }) => req?.user?.tenants?.[0]?.tenant ?? null,
       },
       tenantsArrayField: {
         includeDefaultField: false,
