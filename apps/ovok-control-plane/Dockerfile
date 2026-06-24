@@ -35,6 +35,7 @@ COPY --from=deps /app/packages/ovok-contracts ./packages/ovok-contracts
 COPY . .
 
 WORKDIR /app/apps/ovok-control-plane
+RUN pnpm --filter @ovok/contracts run build
 RUN pnpm run build
 RUN chmod +x docker-entrypoint.sh
 

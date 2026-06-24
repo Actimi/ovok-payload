@@ -39,6 +39,7 @@ WORKDIR /app/apps/ovok-cms
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
+RUN pnpm --filter @ovok/contracts run build
 RUN pnpm run build
 RUN mkdir -p public
 RUN chmod +x docker-entrypoint.sh
