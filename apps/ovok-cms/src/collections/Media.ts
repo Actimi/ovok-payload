@@ -2,14 +2,11 @@ import type { CollectionConfig } from 'payload'
 
 export const Media: CollectionConfig = {
   slug: 'media',
-  upload: {
-    staticDir: 'media',
-  },
   access: {
-    read: () => true,
     create: () => true,
-    update: () => true,
     delete: () => true,
+    read: () => true,
+    update: () => true,
   },
   fields: [
     {
@@ -17,4 +14,7 @@ export const Media: CollectionConfig = {
       type: 'text',
     },
   ],
+  upload: {
+    staticDir: 'media',
+  },
 }

@@ -12,23 +12,23 @@ import type { CollectionConfig } from 'payload'
  */
 export const ContentItems: CollectionConfig = {
   slug: 'content-items',
+  access: {
+    create: () => true,
+    delete: () => true,
+    read: () => true,
+    update: () => true,
+  },
   admin: {
     useAsTitle: 'title',
-  },
-  access: {
-    read: () => true,
-    create: () => true,
-    update: () => true,
-    delete: () => true,
   },
   fields: [
     {
       name: 'contentType',
       type: 'relationship',
-      relationTo: 'content-types',
-      required: true,
       hasMany: false,
       index: true,
+      relationTo: 'content-types',
+      required: true,
     },
     {
       name: 'title',
@@ -38,28 +38,30 @@ export const ContentItems: CollectionConfig = {
     {
       name: 'slug',
       type: 'text',
+      admin: {
+        description: 'Optional URL-safe identifier. Unique per content-type per tenant when set.',
+      },
       index: true,
-      admin: { description: 'Optional URL-safe identifier. Unique per content-type per tenant when set.' },
     },
     {
       name: 'status',
       type: 'select',
-      required: true,
       defaultValue: 'draft',
+      index: true,
       options: [
         { label: 'Draft', value: 'draft' },
         { label: 'Published', value: 'published' },
       ],
-      index: true,
+      required: true,
     },
     {
       name: 'data',
       type: 'json',
-      required: true,
       admin: {
         description:
           'Field values keyed by the content-type field `key`. The dashboard renders the right input per field-type; the public-delivery API returns this object verbatim.',
       },
+      required: true,
     },
   ],
   timestamps: true,

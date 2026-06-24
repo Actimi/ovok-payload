@@ -8,15 +8,15 @@ import { ovokInternalStrategy } from '../access/ovokInternal'
  */
 export const Users: CollectionConfig = {
   slug: 'users',
+  access: {
+    create: () => false,
+    delete: () => false,
+    read: () => true,
+    update: () => false,
+  },
   auth: {
     disableLocalStrategy: true,
     strategies: [ovokInternalStrategy],
-  },
-  access: {
-    read: () => true,
-    create: () => false,
-    update: () => false,
-    delete: () => false,
   },
   fields: [{ name: 'email', type: 'email' }],
 }

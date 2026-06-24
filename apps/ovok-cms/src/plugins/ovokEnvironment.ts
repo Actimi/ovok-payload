@@ -1,4 +1,4 @@
-import type { CollectionConfig, Config, Plugin } from 'payload'
+import type { CollectionConfig, Config, Plugin, Where } from 'payload'
 
 import { ENVIRONMENTS } from '@ovok/contracts'
 
@@ -121,7 +121,7 @@ const addEnvironmentHooks = (collection: CollectionConfig): void => {
         const where = environmentWhere(environment)
 
         if ('where' in args && args.where) {
-          args.where = combineWhere(args.where as Where, where)
+          args.where = combineWhere(args.where, where)
         } else if ('where' in args) {
           args.where = where
         }

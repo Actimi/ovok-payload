@@ -1,12 +1,12 @@
 {
   "name": "@actimi/ovok-cms",
   "version": "0.1.0",
+  "private": true,
   "description": "Ovok CMS — multi-tenant Payload deploy fronted by the Ovok backend.",
   "license": "MIT",
-  "private": true,
   "type": "module",
   "scripts": {
-    "build": "cross-env NODE_OPTIONS=--no-deprecation next build",
+    "build": "cross-env NODE_OPTIONS=--no-deprecation next build --webpack",
     "ci": "payload migrate && pnpm build",
     "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev",
     "devsafe": "rm -rf .next && cross-env NODE_OPTIONS=--no-deprecation next dev",
@@ -20,9 +20,10 @@
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts"
   },
   "dependencies": {
+    "@ovok/contracts": "file:../../packages/ovok-contracts",
     "@payloadcms/db-postgres": "3.82.1",
-    "@payloadcms/plugin-multi-tenant": "3.82.1",
     "@payloadcms/next": "3.82.1",
+    "@payloadcms/plugin-multi-tenant": "3.82.1",
     "@payloadcms/richtext-lexical": "3.82.1",
     "@payloadcms/ui": "3.82.1",
     "cross-env": "10.1.0",

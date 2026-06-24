@@ -4,6 +4,12 @@ import { ovokInternalStrategy } from '../access/ovokInternal'
 
 export const Tenants: CollectionConfig = {
   slug: 'tenants',
+  access: {
+    create: () => true,
+    delete: () => false,
+    read: () => true,
+    update: () => true,
+  },
   admin: {
     useAsTitle: 'slug',
   },
@@ -11,33 +17,27 @@ export const Tenants: CollectionConfig = {
     disableLocalStrategy: true,
     strategies: [ovokInternalStrategy],
   },
-  access: {
-    read: () => true,
-    create: () => true,
-    update: () => true,
-    delete: () => false,
-  },
   fields: [
     {
       name: 'medplumProjectId',
       type: 'text',
+      admin: { description: 'The Medplum top-level Project UUID. Identifies the tenant.' },
+      index: true,
       required: true,
       unique: true,
-      index: true,
-      admin: { description: 'The Medplum top-level Project UUID. Identifies the tenant.' },
     },
     {
       name: 'slug',
       type: 'text',
+      admin: { description: 'Human-readable code from src/tenant-code (Ovok backend).' },
       required: true,
       unique: true,
-      admin: { description: 'Human-readable code from src/tenant-code (Ovok backend).' },
     },
     {
       name: 'active',
       type: 'checkbox',
-      defaultValue: true,
       admin: { description: 'False when the project has disabled the CMS setting.' },
+      defaultValue: true,
     },
   ],
   timestamps: true,

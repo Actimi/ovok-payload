@@ -1,4 +1,4 @@
-import { CreateProjectSchema, EnableEnvironmentSchema } from '@ovok/contracts'
+import { CreateProjectSchema, EnableEnvironmentSchema, type Environment } from '@ovok/contracts'
 import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { z } from 'zod'
@@ -79,7 +79,7 @@ projectsRouter.post('/:slug/environments', async (c) => {
     return c.json({ error: 'Project not found' }, 404)
   }
 
-  const environment = parsed.data.environment as Environment
+  const environment = parsed.data.environment
 
   const existing = await db
     .select()
