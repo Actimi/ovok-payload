@@ -89,12 +89,12 @@ Three services must share the same `PAYLOAD_INTERNAL_API_KEY` / `OVOK_INTERNAL_A
 
 ### `ovok-control-plane` variables
 
-| Variable                     | Example                                          |
-| ---------------------------- | ------------------------------------------------ |
-| `CONTROL_PLANE_DATABASE_URL` | `${{Postgres-8GYg.DATABASE_URL}}` (dedicated DB) |
-| `OVOK_INTERNAL_API_KEY`      | same as `PAYLOAD_INTERNAL_API_KEY`               |
-| `OVOK_CMS_URL`               | `http://payload-ovok.railway.internal:8080`      |
-| `PORT`                       | `4001`                                           |
+| Variable                     | Example                                                  |
+| ---------------------------- | -------------------------------------------------------- |
+| `CONTROL_PLANE_DATABASE_URL` | `${{ovok-control-plane-db.DATABASE_URL}}` (dedicated DB) |
+| `OVOK_INTERNAL_API_KEY`      | same as `PAYLOAD_INTERNAL_API_KEY`                       |
+| `OVOK_CMS_URL`               | `http://payload-ovok.railway.internal:8080`              |
+| `PORT`                       | `4001`                                                   |
 
 ### `ovok-internal` (ovok-core sandbox) variables
 

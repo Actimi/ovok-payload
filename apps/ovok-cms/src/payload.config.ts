@@ -17,6 +17,7 @@ import { Users } from './collections/Users'
 import { healthEndpoint } from './endpoints/health'
 import { provisionTenantEndpoint } from './endpoints/provisionTenant'
 import { schemaEndpoint } from './endpoints/schema'
+import { migrations } from './migrations/index'
 import { ovokEnvironmentPlugin } from './plugins/ovokEnvironment'
 
 const filename = fileURLToPath(import.meta.url)
@@ -40,6 +41,7 @@ export default buildConfig({
     pool: {
       connectionString: process.env.DATABASE_URI || process.env.DATABASE_URL || '',
     },
+    prodMigrations: migrations,
   }),
   editor: lexicalEditor(),
   endpoints: [healthEndpoint, provisionTenantEndpoint, schemaEndpoint],
