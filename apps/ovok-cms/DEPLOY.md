@@ -64,4 +64,45 @@ docker compose --profile apps up --build
 
 ## 6. Networking
 
-Wire `OVOK_CMS_URL` on the control plane to the **private** Railway hostname of the CMS service (e.g. `http://ovok-cms.railway.internal:3000` or the public URL during early setup).
+Wire `OVOK_CMS_URL` on the control plane to the **private** Railway hostname of the CMS service (e.g. `http://payload-ovok.railway.internal:8080`).
+
+## 7. Railway sandbox (Ovok project)
+
+Three services must share the same `PAYLOAD_INTERNAL_API_KEY` / `OVOK_INTERNAL_API_KEY`:
+
+| Railway service             | Repo                  | Config file                            | Health check        |
+| --------------------------- | --------------------- | -------------------------------------- | ------------------- |
+| `payload-ovok`              | `Actimi/ovok-payload` | `apps/ovok-cms/railway.toml`           | `/api/_ovok/health` |
+| `ovok-control-plane`        | `Actimi/ovok-payload` | `apps/ovok-control-plane/railway.toml` | `/health`           |
+| `ovok-internal` (ovok-core) | `Actimi/ovok-core`    | —                                      | `/healthcheck`      |
+
+**Dashboard settings (each ovok-payload service):** Root Directory = `.` (repo root).
+
+### `payload-ovok` variables
+
+| Variable                    | Example                                                     |
+| --------------------------- | ----------------------------------------------------------- |
+| `DATABASE_URI`              | `${{ovok-cms-postgres.DATABASE_URL}}` or dedicated Postgres |
+| `PAYLOAD_PUBLIC_SERVER_URL` | `https://payload-ovok-production.up.railway.app`            |
+| `PAYLOAD_INTERNAL_API_KEY`  | shared secret                                               |
+| `OVOK_CORE_INTERNAL_URL`    | `http://ovok-internal.railway.internal:4000`                |
+
+### `ovok-control-plane` variables
+
+| Variable                     | Example                                          |
+| ---------------------------- | ------------------------------------------------ |
+| `CONTROL_PLANE_DATABASE_URL` | `${{Postgres-8GYg.DATABASE_URL}}` (dedicated DB) |
+| `OVOK_INTERNAL_API_KEY`      | same as `PAYLOAD_INTERNAL_API_KEY`               |
+| `OVOK_CMS_URL`               | `http://payload-ovok.railway.internal:8080`      |
+| `PORT`                       | `4001`                                           |
+
+### `ovok-internal` (ovok-core sandbox) variables
+
+| Variable                     | Example                                           |
+| ---------------------------- | ------------------------------------------------- |
+| `PAYLOAD_CMS_URL`            | `http://payload-ovok.railway.internal:8080`       |
+| `PAYLOAD_CONTROL_PLANE_URL`  | `http://ovok-control-plane.railway.internal:4001` |
+| `PAYLOAD_INTERNAL_API_KEY`   | same shared secret                                |
+| `PAYLOAD_CMS_PUBLIC_API_KEY` | public delivery API key                           |
+
+Use **private** `.railway.internal` hostnames for service-to-service calls within the project.
