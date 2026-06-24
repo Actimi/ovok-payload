@@ -78,12 +78,13 @@ the top-right navbar. New visitors land on **alpha** by default.
 
 1. Read the [platform overview](./platform/overview.md) for the
    one-page mental model.
-2. Skim the [release tiers](./platform/environments.md) page to choose
+2. Skim the [public API map](./platform/public-api) for route families.
+3. Skim the [release tiers](./platform/environments.md) page to choose
    the surface you'll build against.
-3. Operators — jump to the [Console](./surfaces/console.md).
-4. Analysts and clinicians — head for the
+4. Operators — jump to the [Console](./surfaces/console.md).
+5. Analysts and clinicians — head for the
    [Data Dashboard](./surfaces/data-dashboard.md).
-5. Builders — pick an API surface:
+6. Builders — pick an API surface:
    - [**High Level API**](./api/high-level/index.mdx) — auth, projects,
      content, billing, devices, signals. The convenience layer.
    - [**FHIR API**](./api/fhir/index.mdx) — every FHIR R5 resource,

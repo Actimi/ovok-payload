@@ -19,6 +19,7 @@ export function buildSidebar(envKey: string): SidebarsConfig {
       collapsed: false,
       items: [
         'platform/overview',
+        'platform/public-api',
         'platform/environments',
         'platform/payload-stack',
         'platform/deployment',

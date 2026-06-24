@@ -73,7 +73,7 @@ and Data Dashboard are clients like any other.
 Ovok ships an optional headless CMS backed by Payload. It shares the
 same API host but uses dedicated Railway services (payload-ovok +
 ovok-control-plane) behind ovok-core proxies. See
-[Payload stack](./payload-stack.mdx) and [Content (CMS)](/dev/cms/index).
+[Payload stack](./payload-stack) and [Content (CMS)](../cms/index).
 
 ## Next
 
