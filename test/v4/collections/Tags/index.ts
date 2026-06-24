@@ -22,9 +22,13 @@ const Tags: CollectionConfig = {
       type: 'textarea',
     },
   ],
-  hierarchy: {
-    parentFieldName: 'parent',
+  tags: {
+    admin: {
+      treeLimit: 4,
+    },
+    collectionSpecific: { fieldName: 'allowedCollections' },
   },
+  versions: false,
 }
 
 export default Tags

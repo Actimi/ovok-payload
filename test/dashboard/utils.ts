@@ -118,8 +118,10 @@ export class DashboardHelper {
     const activePopup = this.page.locator('.popup__content:visible')
     await expect(activePopup).toBeVisible()
     const widthOptions = activePopup.locator('.popup-button-list__button')
-    await expect(widthOptions.first().locator('span').first()).toHaveText(arg.min)
-    await expect(widthOptions.last().locator('span').first()).toHaveText(arg.max)
+    await expect(widthOptions.first().locator('.widget-wrapper__size-btn-label')).toHaveText(
+      arg.min,
+    )
+    await expect(widthOptions.last().locator('.widget-wrapper__size-btn-label')).toHaveText(arg.max)
   }
 
   assertWidget = async (pos: number, slug: string, width: WidgetWidth) => {
@@ -205,7 +207,9 @@ export class DashboardHelper {
 
   cancelEditing = async () => {
     await this.stepNavLast.locator('button').nth(2).click()
-    const confirmButton = this.page.locator('#confirm-action')
+    const confirmButton = this.page.locator(
+      '#cancel-dashboard-changes [data-dialog-action="confirm"]',
+    )
     await confirmButton.click()
     await this.assertIsEditing(false)
     // Wait for any layout changes/transitions to settle

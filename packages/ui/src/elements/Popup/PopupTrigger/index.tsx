@@ -16,7 +16,7 @@ export type PopupButtonRenderProps = {
 export type PopupTriggerProps = {
   active: boolean
   button?: React.ReactNode
-  buttonType: 'custom' | 'default' | 'none'
+  buttonType: 'custom' | 'default'
   className?: string
   disabled?: boolean
   noBackground?: boolean
@@ -45,6 +45,7 @@ export const PopupTrigger: React.FC<PopupTriggerProps> = (props) => {
     !noBackground && `${baseClass}--background`,
     size && `${baseClass}--size-${size}`,
     disabled && `${baseClass}--disabled`,
+    active && `${baseClass}--active`,
   ]
     .filter(Boolean)
     .join(' ')
@@ -73,10 +74,6 @@ export const PopupTrigger: React.FC<PopupTriggerProps> = (props) => {
         })}
       </>
     )
-  }
-
-  if (buttonType === 'none') {
-    return null
   }
 
   if (buttonType === 'custom') {
