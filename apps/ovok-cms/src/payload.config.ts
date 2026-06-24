@@ -14,7 +14,10 @@ import { Media } from './collections/Media'
 import { Posts } from './collections/Posts'
 import { Tenants } from './collections/Tenants'
 import { Users } from './collections/Users'
+import { healthEndpoint } from './endpoints/health'
+import { provisionTenantEndpoint } from './endpoints/provisionTenant'
 import { schemaEndpoint } from './endpoints/schema'
+import { ovokEnvironmentPlugin } from './plugins/ovokEnvironment'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -39,8 +42,9 @@ export default buildConfig({
     },
   }),
   editor: lexicalEditor(),
-  endpoints: [schemaEndpoint],
+  endpoints: [healthEndpoint, provisionTenantEndpoint, schemaEndpoint],
   plugins: [
+    ovokEnvironmentPlugin(),
     multiTenantPlugin({
       collections: {
         'content-items': {},
