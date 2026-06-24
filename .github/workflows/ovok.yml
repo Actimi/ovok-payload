@@ -1,0 +1,62 @@
+name: ovok/ci
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/ovok.yml'
+      - 'apps/ovok-cms/**'
+      - 'apps/ovok-control-plane/**'
+      - 'packages/ovok-contracts/**'
+      - 'pnpm-lock.yaml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ovok.yml'
+      - 'apps/ovok-cms/**'
+      - 'apps/ovok-control-plane/**'
+      - 'packages/ovok-contracts/**'
+      - 'pnpm-lock.yaml'
+
+concurrency:
+  group: ovok-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DO_NOT_TRACK: 1
+  NEXT_TELEMETRY_DISABLED: 1
+
+jobs:
+  contracts:
+    name: ovok-contracts
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          pnpm-run-install: 'true'
+      - run: pnpm --filter @ovok/contracts build
+      - run: pnpm --filter @ovok/contracts test
+
+  control-plane:
+    name: ovok-control-plane
+    runs-on: ubuntu-24.04
+    needs: contracts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm --filter @ovok/control-plane build
+      - run: pnpm --filter @ovok/control-plane test
+
+  cms:
+    name: ovok-cms (unit)
+    runs-on: ubuntu-24.04
+    needs: contracts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Run tests (integration skipped without DATABASE_URI)
+        run: pnpm --filter @actimi/ovok-cms test:int
+        env:
+          PAYLOAD_SECRET: test-secret-with-at-least-32-characters-for-ci
+          PAYLOAD_INTERNAL_API_KEY: test-internal-key

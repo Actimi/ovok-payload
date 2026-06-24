@@ -20,6 +20,7 @@ CLAUDE.local.md
 .claude/skills/refactoring/
 .claude/skills/writing-scss/
 .worktrees/
+staging/
 
 # Custom actions
 !.github/actions/**/dist

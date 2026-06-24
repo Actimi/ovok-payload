@@ -4,6 +4,7 @@
 // the monorepo. We filter template files out of ESLint (prettier still formats them);
 // templates are linted standalone via their own `lint` script / build.
 const isTemplateFile = (file) => file.includes('/templates/')
+const isOvokDocsFile = (file) => file.includes('/docs/ovok-docs/')
 const quote = (files) => files.map((file) => `'${file}'`).join(' ')
 
 export default {
@@ -11,7 +12,7 @@ export default {
   '*.{md,mdx,yml,json}': 'prettier --write',
   '*.{js,jsx,ts,tsx}': (files) => {
     const commands = []
-    const lintable = files.filter((file) => !isTemplateFile(file))
+    const lintable = files.filter((file) => !isTemplateFile(file) && !isOvokDocsFile(file))
 
     if (lintable.length) {
       commands.push(

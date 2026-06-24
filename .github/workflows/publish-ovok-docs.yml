@@ -1,0 +1,147 @@
+name: ovok/publish-docs
+
+# Publishes the full Ovok docs site to Actimi/ovok-docs (branch `dev`):
+#
+#   Written guides  → docs/dev/{intro,platform,surfaces,cms}/  (from docs/ovok-docs/)
+#   API reference   → docs/dev/api/{high-level,fhir}/           (from ovok-core OpenAPI)
+#   Sidebar         → sidebars/_factory.ts
+#
+# Branch mapping (ovok-payload): main → dev
+# OpenAPI source (ovok-core):   sandbox branch → openapi/dev-public.yaml
+#
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/ovok-docs/**'
+      - '.github/workflows/publish-ovok-docs.yml'
+      - 'scripts/sync-ovok-docs-stage.mjs'
+
+jobs:
+  resolve_env:
+    name: Resolve env folder
+    runs-on: ubuntu-latest
+    outputs:
+      source_branch: ${{ steps.map.outputs.source_branch }}
+      env_key: ${{ steps.map.outputs.env_key }}
+      env_label: ${{ steps.map.outputs.env_label }}
+      openapi_branch: ${{ steps.map.outputs.openapi_branch }}
+    steps:
+      - name: Map source branch to env folder
+        id: map
+        shell: bash
+        run: |
+          SOURCE_BRANCH="${GITHUB_REF#refs/heads/}"
+          case "$SOURCE_BRANCH" in
+            main|sandbox)
+              ENV_KEY=dev
+              LABEL="Dev (sandbox)"
+              OPENAPI_BRANCH=sandbox
+              ;;
+            *)
+              echo "::warning::Source branch '$SOURCE_BRANCH' is not mapped to a docs env. Skipping."
+              exit 0
+              ;;
+          esac
+          echo "source_branch=$SOURCE_BRANCH" >> "$GITHUB_OUTPUT"
+          echo "env_key=$ENV_KEY"             >> "$GITHUB_OUTPUT"
+          echo "env_label=$LABEL"             >> "$GITHUB_OUTPUT"
+          echo "openapi_branch=$OPENAPI_BRANCH" >> "$GITHUB_OUTPUT"
+
+  publish:
+    name: Publish ${{ needs.resolve_env.outputs.env_label }} → ovok-docs
+    runs-on: ubuntu-latest
+    needs: resolve_env
+    if: ${{ needs.resolve_env.outputs.env_key != '' }}
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout ovok-payload
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Stage written guides for this env
+        run: node scripts/sync-ovok-docs-stage.mjs
+        env:
+          ENV_KEY: ${{ needs.resolve_env.outputs.env_key }}
+
+      - name: Download OpenAPI artifact from ovok-core
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          github_token: ${{ secrets.SDK_REPO_TOKEN }}
+          repo: Actimi/ovok-core
+          workflow: backend.yml
+          branch: ${{ needs.resolve_env.outputs.openapi_branch }}
+          name: docs
+          path: openapi-artifact
+          if_no_artifact_found: warn
+
+      - name: Stage OpenAPI spec for this env
+        run: |
+          ENV_KEY="${{ needs.resolve_env.outputs.env_key }}"
+          mkdir -p staging/openapi
+          if [ -f openapi-artifact/ovok-api-public.yaml ]; then
+            cp openapi-artifact/ovok-api-public.yaml "staging/openapi/${ENV_KEY}-public.yaml"
+            echo "OpenAPI for ${ENV_KEY}: ovok-core artifact"
+          else
+            echo "::warning::No ovok-api-public.yaml artifact — written guides will publish; API reference pages will not refresh."
+          fi
+
+      - name: Clone ovok-docs (single branch)
+        env:
+          OVOK_DOCS_TOKEN: ${{ secrets.SDK_REPO_TOKEN }}
+        run: |
+          if [ -z "$OVOK_DOCS_TOKEN" ]; then
+            echo "::error::SDK_REPO_TOKEN secret missing (needs push access to Actimi/ovok-docs)."
+            exit 1
+          fi
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git clone --depth 1 --branch dev \
+            "https://x-access-token:${OVOK_DOCS_TOKEN}@github.com/Actimi/ovok-docs.git" ovok-docs
+
+      - name: Sync all staged content into ovok-docs
+        run: |
+          ENV_KEY="${{ needs.resolve_env.outputs.env_key }}"
+          rsync -a "staging/docs/${ENV_KEY}/" "ovok-docs/docs/${ENV_KEY}/"
+          if [ -f "staging/sidebars/_factory.ts" ]; then
+            cp "staging/sidebars/_factory.ts" "ovok-docs/sidebars/_factory.ts"
+          fi
+          if [ -f "staging/openapi/${ENV_KEY}-public.yaml" ]; then
+            mkdir -p ovok-docs/openapi
+            cp "staging/openapi/${ENV_KEY}-public.yaml" "ovok-docs/openapi/${ENV_KEY}-public.yaml"
+          fi
+
+      - name: Install ovok-docs deps (postinstall regenerates API + llms bundles)
+        working-directory: ovok-docs
+        run: pnpm install --frozen-lockfile
+
+      - name: Commit + push
+        working-directory: ovok-docs
+        env:
+          OVOK_DOCS_TOKEN: ${{ secrets.SDK_REPO_TOKEN }}
+        run: |
+          ENV_KEY="${{ needs.resolve_env.outputs.env_key }}"
+          git add "docs/${ENV_KEY}" sidebars/_factory.ts
+          git add "openapi/${ENV_KEY}-public.yaml" 2>/dev/null || true
+          git add static/openapi static/data static/llms 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "No changes to publish."
+            exit 0
+          fi
+          git commit -m "docs(${ENV_KEY}): publish Ovok docs site from ovok-payload@${GITHUB_SHA::7}" \
+                     -m "Written guides: ovok-payload@${{ needs.resolve_env.outputs.source_branch }}" \
+                     -m "OpenAPI: ovok-core@${{ needs.resolve_env.outputs.openapi_branch }}" \
+                     -m "Source commit: ${{ github.sha }}"
+          git push "https://x-access-token:${OVOK_DOCS_TOKEN}@github.com/Actimi/ovok-docs.git" HEAD:dev
