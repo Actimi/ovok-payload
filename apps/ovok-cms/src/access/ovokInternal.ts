@@ -17,7 +17,7 @@ export const OVOK_TENANT_HEADER = 'x-ovok-tenant-id'
  */
 export const ovokInternalStrategy: AuthStrategy = {
   name: 'ovok-internal',
-  authenticate: async ({ headers }) => {
+  authenticate: ({ headers }) => {
     const presentedKey = headers.get(OVOK_INTERNAL_KEY_HEADER)
     const expectedKey = process.env.PAYLOAD_INTERNAL_API_KEY
     if (!expectedKey || presentedKey !== expectedKey) {
