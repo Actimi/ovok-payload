@@ -1,63 +1,68 @@
 # syntax=docker/dockerfile:1.7
-# Dockerfile for the ovok-cms Payload app.
 #
-# Build context: apps/ovok-cms/ (narrow — single package, matches Railway's
-# default service root). A standalone pnpm-lock.yaml lives next to this file,
-# generated via `pnpm install --ignore-workspace --lockfile-only`.
+# Railway / Docker deploy (monorepo root context):
+#   docker build -f apps/ovok-cms/Dockerfile .
 #
-# Alpine needs python3 + make + g++ + vips-dev for the native post-install
-# scripts (bufferutil, better-sqlite3, sharp, workerd).
+# Railway service settings:
+#   Root Directory: .  (repo root)
+#   Dockerfile Path: apps/ovok-cms/Dockerfile
+#   Healthcheck: GET /api/_ovok/health
 
 ARG NODE_VERSION=24.16.0
 ARG PNPM_VERSION=10.27.0
 
 FROM node:${NODE_VERSION}-alpine AS base
 ARG PNPM_VERSION
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat vips
 RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 WORKDIR /app
 
-# --- deps ----------------------------------------------------------------
 FROM base AS deps
 RUN apk add --no-cache python3 make g++ vips-dev
 
-COPY package.json pnpm-lock.yaml ./
-# NOTE: no BuildKit cache mount here — Railway's BuildKit wrapper requires a
-# cacheKey-prefixed id on `--mount=type=cache` and rejects the upstream form.
-# Install is fast enough cold (~30s) that we skip the speedup for portability.
-RUN pnpm install --frozen-lockfile
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/ovok-contracts/package.json ./packages/ovok-contracts/
+COPY packages/ovok-contracts/src ./packages/ovok-contracts/src
+COPY packages/ovok-contracts/tsconfig.json ./packages/ovok-contracts/tsconfig.json
+COPY apps/ovok-cms/package.json ./apps/ovok-cms/
 
-# --- builder -------------------------------------------------------------
+RUN pnpm install --frozen-lockfile --filter @actimi/ovok-cms...
+
 FROM base AS builder
-
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/ovok-cms/node_modules ./apps/ovok-cms/node_modules
+COPY --from=deps /app/packages/ovok-contracts ./packages/ovok-contracts
 COPY . .
+
+WORKDIR /app/apps/ovok-cms
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
 RUN pnpm run build
-
-# Ensure public/ exists so the runner COPY below doesn't fail when the app
-# ships no static assets at the workspace root.
 RUN mkdir -p public
+RUN chmod +x docker-entrypoint.sh
 
-# --- runner --------------------------------------------------------------
 FROM base AS runner
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
 RUN addgroup --system --gid 1001 nodejs \
  && adduser  --system --uid 1001 nextjs
 
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static    ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/public          ./public
+WORKDIR /app/apps/ovok-cms
+
+COPY --from=builder --chown=nextjs:nodejs /app/apps/ovok-cms/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/ovok-cms/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/ovok-cms/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/apps/ovok-cms/src ./src
+COPY --from=builder --chown=nextjs:nodejs /app/apps/ovok-cms/docker-entrypoint.sh ./docker-entrypoint.sh
+COPY --from=builder --chown=nextjs:nodejs /app/packages/ovok-contracts /app/packages/ovok-contracts
 
 USER nextjs
+
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+ENTRYPOINT ["./docker-entrypoint.sh"]

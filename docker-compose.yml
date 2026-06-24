@@ -1,0 +1,81 @@
+services:
+  cms-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: payload
+      POSTGRES_PASSWORD: payload
+      POSTGRES_DB: ovok_cms
+    ports:
+      - '5432:5432'
+    volumes:
+      - cms_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U payload -d ovok_cms']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  control-plane-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: control
+      POSTGRES_PASSWORD: control
+      POSTGRES_DB: ovok_control_plane
+    ports:
+      - '5433:5432'
+    volumes:
+      - control_plane_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U control -d ovok_control_plane']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    profiles:
+      - redis
+
+  ovok-cms:
+    build:
+      context: .
+      dockerfile: apps/ovok-cms/Dockerfile
+    depends_on:
+      cms-postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URI: postgres://payload:payload@cms-postgres:5432/ovok_cms
+      PAYLOAD_SECRET: dev-secret-change-me-32chars-minimum
+      PAYLOAD_PUBLIC_SERVER_URL: http://localhost:3000
+      PAYLOAD_INTERNAL_API_KEY: dev-internal-key
+      OVOK_CORE_INTERNAL_URL: http://host.docker.internal:4000
+      NODE_ENV: production
+    ports:
+      - '3000:3000'
+    profiles:
+      - apps
+
+  ovok-control-plane:
+    build:
+      context: .
+      dockerfile: apps/ovok-control-plane/Dockerfile
+    depends_on:
+      control-plane-postgres:
+        condition: service_healthy
+      ovok-cms:
+        condition: service_started
+    environment:
+      CONTROL_PLANE_DATABASE_URL: postgres://control:control@control-plane-postgres:5432/ovok_control_plane
+      OVOK_INTERNAL_API_KEY: dev-internal-key
+      OVOK_CMS_URL: http://ovok-cms:3000
+      PORT: 4001
+    ports:
+      - '4001:4001'
+    profiles:
+      - apps
+
+volumes:
+  cms_postgres_data:
+  control_plane_postgres_data:
