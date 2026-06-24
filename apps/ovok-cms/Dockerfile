@@ -53,16 +53,17 @@ ENV HOSTNAME=0.0.0.0
 RUN addgroup --system --gid 1001 nodejs \
  && adduser  --system --uid 1001 nextjs
 
-WORKDIR /app/apps/ovok-cms
+WORKDIR /app
 
 COPY --from=builder --chown=nextjs:nodejs /app/apps/ovok-cms/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/ovok-cms/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/apps/ovok-cms/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/apps/ovok-cms/src ./src
-COPY --from=builder --chown=nextjs:nodejs /app/apps/ovok-cms/docker-entrypoint.sh ./docker-entrypoint.sh
+COPY --from=builder --chown=nextjs:nodejs /app/apps/ovok-cms/.next/static ./apps/ovok-cms/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/ovok-cms/public ./apps/ovok-cms/public
+COPY --from=builder --chown=nextjs:nodejs /app/apps/ovok-cms/docker-entrypoint.sh ./apps/ovok-cms/docker-entrypoint.sh
 COPY --from=builder --chown=nextjs:nodejs /app/packages/ovok-contracts /app/packages/ovok-contracts
 
 USER nextjs
+
+WORKDIR /app/apps/ovok-cms
 
 EXPOSE 3000
 
