@@ -59,7 +59,7 @@ export const combineWhere = (base: undefined | Where, extra: Where): Where => {
  */
 export const ovokInternalStrategy: AuthStrategy = {
   name: 'ovok-internal',
-  authenticate: ({ headers }) => {
+  authenticate: (({ headers }) => {
     const presentedKey = headers.get(OVOK_INTERNAL_KEY_HEADER)
     const expectedKey = process.env.PAYLOAD_INTERNAL_API_KEY
     if (!expectedKey || presentedKey !== expectedKey) {
@@ -71,14 +71,15 @@ export const ovokInternalStrategy: AuthStrategy = {
       return { user: null }
     }
 
-    const user: User = {
-      id: 0,
-      collection: 'users',
-      createdAt: new Date(0).toISOString(),
-      email: 'proxy@ovok.local',
-      updatedAt: new Date(0).toISOString(),
+    return {
+      user: {
+        id: 0,
+        collection: 'users',
+        createdAt: new Date(0).toISOString(),
+        email: 'proxy@ovok.local',
+        tenants: [{ tenant: tenantId }],
+        updatedAt: new Date(0).toISOString(),
+      } as User,
     }
-
-    return { user }
-  },
+  }) as AuthStrategy['authenticate'],
 }

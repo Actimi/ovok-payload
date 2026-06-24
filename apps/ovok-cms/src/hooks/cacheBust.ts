@@ -1,4 +1,4 @@
-import type { CACHE_PURGE_PATH, type CachePurgePayload, Environment } from '@ovok/contracts'
+import { CACHE_PURGE_PATH, type CachePurgePayload, type Environment } from '@ovok/contracts'
 
 import { ENVIRONMENT_FIELD_NAME } from '../plugins/ovokEnvironment'
 

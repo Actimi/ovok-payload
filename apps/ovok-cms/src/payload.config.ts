@@ -1,4 +1,4 @@
-import type { PayloadRequest } from 'payload'
+import type { SharpDependency } from 'payload'
 
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant'
@@ -58,7 +58,13 @@ export default buildConfig({
         // The plugin's built-in default only auto-assigns from req.user when
         // autosave is enabled; these collections have none, so without this
         // every create fails validation with "Assigned Tenant is required".
-        defaultValue: ({ req }) => req?.user?.tenants?.[0]?.tenant ?? null,
+        defaultValue: ({ req }) => {
+          const user = req?.user as
+            | { tenants?: Array<{ tenant?: number | string }> }
+            | null
+            | undefined
+          return user?.tenants?.[0]?.tenant ?? null
+        },
       },
       tenantsArrayField: {
         includeDefaultField: false,
@@ -68,7 +74,7 @@ export default buildConfig({
   ],
   secret: process.env.PAYLOAD_SECRET || '',
   serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL,
-  sharp,
+  sharp: sharp as unknown as SharpDependency,
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
