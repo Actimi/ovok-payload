@@ -1,5 +1,7 @@
 import type { Endpoint, Field, SanitizedCollectionConfig } from 'payload'
 
+import { SCHEMA_CACHE_CONTROL } from '@ovok/contracts'
+
 /**
  * Returns a normalised description of every collection so the Ovok Dashboard
  * can render Payload-style CRUD forms without bundling Payload's admin UI.
@@ -8,7 +10,7 @@ import type { Endpoint, Field, SanitizedCollectionConfig } from 'payload'
  *   GET /v1/content/_ovok/schema
  *
  * Direct access (inside the cluster, with internal-key header):
- *   GET /_ovok/schema
+ *   GET /api/_ovok/schema
  */
 
 interface NormalisedField {
@@ -95,6 +97,9 @@ export const schemaEndpoint: Endpoint = {
       .filter(({ config }) => config.slug !== 'tenants' && config.slug !== 'users')
       .map(({ config }) => normaliseCollection(config))
 
-    return Response.json({ collections })
+    return Response.json(
+      { collections },
+      { headers: { 'Cache-Control': SCHEMA_CACHE_CONTROL } },
+    )
   },
 }

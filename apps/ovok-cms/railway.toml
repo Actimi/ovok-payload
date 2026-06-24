@@ -1,0 +1,22 @@
+# Railway service config for ovok-cms
+# https://docs.railway.com/guides/config-as-code
+#
+# In the Railway dashboard:
+#   Root Directory: . (monorepo root — required for @ovok/contracts)
+#   Config file path: apps/ovok-cms/railway.toml
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "apps/ovok-cms/Dockerfile"
+watchPatterns = [
+  "apps/ovok-cms/**",
+  "packages/ovok-contracts/**",
+  "pnpm-lock.yaml",
+  "pnpm-workspace.yaml",
+]
+
+[deploy]
+healthcheckPath = "/api/_ovok/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5

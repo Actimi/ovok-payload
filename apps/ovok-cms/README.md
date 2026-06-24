@@ -6,7 +6,7 @@ Deployable Payload instance that backs Ovok's `/v1/content/*` API.
   `x-ovok-tenant-id` header injected by the Ovok proxy.
 - **No admin UI** — `admin.disable: true`. The Ovok Dashboard
   (`../ovok-dashboard`) renders forms client-side using the schema
-  exposed at `/_ovok/schema`.
+  exposed at `/api/_ovok/schema`.
 - **No Payload-native auth** — auth is delegated to Ovok via a custom
   strategy that checks the `x-ovok-internal-key` header.
 
@@ -21,7 +21,7 @@ src/
     Tenants.ts               # one row per Medplum project (Ovok-managed)
     Media.ts                 # uploads, tenant-scoped
     Posts.ts                 # example content collection
-  endpoints/schema.ts        # GET /_ovok/schema for dashboard form rendering
+  endpoints/schema.ts        # GET /api/_ovok/schema for dashboard form rendering
   app/                       # Next.js routes that serve Payload's API
 ```
 
@@ -84,5 +84,5 @@ external entry point. Payload's port is never exposed.
 2. Tenants are provisioned via the REST API:
    `POST /api/tenants` with `{ medplumProjectId, slug, active: true }`.
    `PATCH /api/tenants/:id` to flip `active` on/off.
-3. Custom dashboard endpoint: `GET /_ovok/schema` returns the
+3. Custom dashboard endpoint: `GET /api/_ovok/schema` returns the
    collection schema; the Ovok Dashboard reads it once on load.
