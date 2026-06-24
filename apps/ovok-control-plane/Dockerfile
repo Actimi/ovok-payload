@@ -43,16 +43,17 @@ FROM base AS runner
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 
-WORKDIR /app/apps/ovok-control-plane
-
-COPY --from=build /app/apps/ovok-control-plane/dist ./dist
-COPY --from=build /app/apps/ovok-control-plane/drizzle ./drizzle
-COPY --from=build /app/apps/ovok-control-plane/drizzle.config.ts ./drizzle.config.ts
-COPY --from=build /app/apps/ovok-control-plane/package.json ./package.json
-COPY --from=build /app/apps/ovok-control-plane/docker-entrypoint.sh ./docker-entrypoint.sh
+COPY --from=build /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
 COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/apps/ovok-control-plane/node_modules ./node_modules
-COPY --from=build /app/packages/ovok-contracts /app/packages/ovok-contracts
+COPY --from=build /app/packages/ovok-contracts ./packages/ovok-contracts
+COPY --from=build /app/apps/ovok-control-plane/dist ./apps/ovok-control-plane/dist
+COPY --from=build /app/apps/ovok-control-plane/drizzle ./apps/ovok-control-plane/drizzle
+COPY --from=build /app/apps/ovok-control-plane/drizzle.config.ts ./apps/ovok-control-plane/drizzle.config.ts
+COPY --from=build /app/apps/ovok-control-plane/package.json ./apps/ovok-control-plane/package.json
+COPY --from=build /app/apps/ovok-control-plane/docker-entrypoint.sh ./apps/ovok-control-plane/docker-entrypoint.sh
+COPY --from=build /app/apps/ovok-control-plane/node_modules ./apps/ovok-control-plane/node_modules
+
+WORKDIR /app/apps/ovok-control-plane
 
 EXPOSE 4001
 
