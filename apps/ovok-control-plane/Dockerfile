@@ -19,6 +19,7 @@ WORKDIR /app
 
 FROM base AS deps
 RUN apk add --no-cache python3 make g++
+ENV NODE_ENV=development
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/ovok-contracts/package.json ./packages/ovok-contracts/
 COPY packages/ovok-contracts/src ./packages/ovok-contracts/src

@@ -14,44 +14,48 @@ import { SCHEMA_CACHE_CONTROL } from '@ovok/contracts'
  */
 
 interface NormalisedField {
-  name: string
-  type: string
-  label: string | null
-  required: boolean
-  unique: boolean
-  hasMany?: boolean
-  relationTo?: string | string[]
-  options?: Array<{ label: string; value: string }>
+  description: null | string
   fields?: NormalisedField[]
-  description: string | null
+  hasMany?: boolean
+  label: null | string
+  name: string
+  options?: Array<{ label: string; value: string }>
+  relationTo?: string | string[]
+  required: boolean
+  type: string
+  unique: boolean
 }
 
 interface NormalisedCollection {
-  slug: string
-  labels: { singular: string; plural: string }
-  upload: boolean
   auth: boolean
   fields: NormalisedField[]
+  labels: { plural: string; singular: string }
+  slug: string
+  upload: boolean
 }
 
-const stringifyLabel = (value: unknown): string | null => {
-  if (typeof value === 'string') return value
+const stringifyLabel = (value: unknown): null | string => {
+  if (typeof value === 'string') {
+    return value
+  }
   return null
 }
 
 const normaliseField = (field: Field): NormalisedField | null => {
-  const anyField = field as Record<string, unknown> & { type: string; name?: string }
-  if (!anyField.name && !['row', 'collapsible', 'tabs', 'ui'].includes(anyField.type)) {
+  const anyField = field as { name?: string; type: string } & Record<string, unknown>
+  if (!anyField.name && !['collapsible', 'row', 'tabs', 'ui'].includes(anyField.type)) {
     return null
   }
 
   const base: NormalisedField = {
     name: (anyField.name as string) ?? anyField.type,
     type: anyField.type,
+    description: stringifyLabel(
+      ((anyField as { admin?: { description?: unknown } }).admin ?? {}).description,
+    ),
     label: stringifyLabel((anyField as { label?: unknown }).label),
     required: Boolean((anyField as { required?: boolean }).required),
     unique: Boolean((anyField as { unique?: boolean }).unique),
-    description: stringifyLabel(((anyField as { admin?: { description?: unknown } }).admin ?? {}).description),
   }
 
   if (anyField.type === 'relationship' || anyField.type === 'upload') {
@@ -61,12 +65,12 @@ const normaliseField = (field: Field): NormalisedField | null => {
 
   if (anyField.type === 'select') {
     const rawOptions =
-      (anyField as { options?: Array<string | { label: string; value: string }> }).options ?? []
+      (anyField as { options?: Array<{ label: string; value: string } | string> }).options ?? []
     base.options = rawOptions.map((o) => (typeof o === 'string' ? { label: o, value: o } : o))
     base.hasMany = Boolean((anyField as { hasMany?: boolean }).hasMany)
   }
 
-  if (['array', 'group', 'blocks'].includes(anyField.type)) {
+  if (['array', 'blocks', 'group'].includes(anyField.type)) {
     const subFields = ((anyField as { fields?: Field[] }).fields ?? [])
       .map(normaliseField)
       .filter((f): f is NormalisedField => f !== null)
@@ -78,28 +82,23 @@ const normaliseField = (field: Field): NormalisedField | null => {
 
 const normaliseCollection = (collection: SanitizedCollectionConfig): NormalisedCollection => ({
   slug: collection.slug,
+  auth: Boolean(collection.auth),
+  fields: collection.fields.map(normaliseField).filter((f): f is NormalisedField => f !== null),
   labels: {
-    singular: stringifyLabel(collection.labels?.singular) ?? collection.slug,
     plural: stringifyLabel(collection.labels?.plural) ?? collection.slug,
+    singular: stringifyLabel(collection.labels?.singular) ?? collection.slug,
   },
   upload: Boolean(collection.upload),
-  auth: Boolean(collection.auth),
-  fields: collection.fields
-    .map(normaliseField)
-    .filter((f): f is NormalisedField => f !== null),
 })
 
 export const schemaEndpoint: Endpoint = {
-  path: '/_ovok/schema',
-  method: 'get',
-  handler: async ({ payload }) => {
+  handler: ({ payload }) => {
     const collections = Object.values(payload.collections)
       .filter(({ config }) => config.slug !== 'tenants' && config.slug !== 'users')
       .map(({ config }) => normaliseCollection(config))
 
-    return Response.json(
-      { collections },
-      { headers: { 'Cache-Control': SCHEMA_CACHE_CONTROL } },
-    )
+    return Response.json({ collections }, { headers: { 'Cache-Control': SCHEMA_CACHE_CONTROL } })
   },
+  method: 'get',
+  path: '/_ovok/schema',
 }

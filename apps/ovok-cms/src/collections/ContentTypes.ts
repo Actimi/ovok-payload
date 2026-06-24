@@ -14,36 +14,37 @@ import type { CollectionConfig } from 'payload'
  */
 export const ContentTypes: CollectionConfig = {
   slug: 'content-types',
+  access: {
+    create: () => true,
+    delete: () => true,
+    read: () => true,
+    update: () => true,
+  },
   admin: {
     useAsTitle: 'name',
-  },
-  access: {
-    read: () => true,
-    create: () => true,
-    update: () => true,
-    delete: () => true,
   },
   fields: [
     {
       name: 'name',
       type: 'text',
-      required: true,
       admin: { description: 'Display name shown in the dashboard navigation.' },
+      required: true,
     },
     {
       name: 'pluralName',
       type: 'text',
-      required: true,
       admin: { description: 'Plural form, e.g. "Landing Contents". Used in list headings.' },
+      required: true,
     },
     {
       name: 'slug',
       type: 'text',
-      required: true,
-      index: true,
       admin: {
-        description: 'URL-safe identifier used in `/v1/public/cms/<slug>/items`. Lowercase, hyphenated, unique per tenant.',
+        description:
+          'URL-safe identifier used in `/v1/public/cms/<slug>/items`. Lowercase, hyphenated, unique per tenant.',
       },
+      index: true,
+      required: true,
     },
     {
       name: 'description',
@@ -52,16 +53,19 @@ export const ContentTypes: CollectionConfig = {
     {
       name: 'fields',
       type: 'array',
-      label: 'Item fields',
       admin: {
-        description: 'Field definitions the item editor will render. Each entry becomes one input in the item form.',
+        description:
+          'Field definitions the item editor will render. Each entry becomes one input in the item form.',
       },
       fields: [
         {
           name: 'key',
           type: 'text',
+          admin: {
+            description:
+              'Programmatic identifier the public-delivery API exposes (snake_case or camelCase).',
+          },
           required: true,
-          admin: { description: 'Programmatic identifier the public-delivery API exposes (snake_case or camelCase).' },
         },
         {
           name: 'label',
@@ -71,7 +75,6 @@ export const ContentTypes: CollectionConfig = {
         {
           name: 'type',
           type: 'select',
-          required: true,
           options: [
             { label: 'Text (single line)', value: 'text' },
             { label: 'Textarea (multi-line)', value: 'textarea' },
@@ -83,6 +86,7 @@ export const ContentTypes: CollectionConfig = {
             { label: 'Media', value: 'media' },
             { label: 'Relationship', value: 'relationship' },
           ],
+          required: true,
         },
         { name: 'required', type: 'checkbox', defaultValue: false },
         { name: 'unique', type: 'checkbox', defaultValue: false },
@@ -99,11 +103,11 @@ export const ContentTypes: CollectionConfig = {
         {
           name: 'localized',
           type: 'checkbox',
-          defaultValue: false,
           admin: {
             description:
               'When true, the item editor stores per-locale values and the public-delivery API falls back to the project default locale.',
           },
+          defaultValue: false,
         },
         {
           name: 'options',
@@ -118,6 +122,7 @@ export const ContentTypes: CollectionConfig = {
           ],
         },
       ],
+      label: 'Item fields',
     },
   ],
   timestamps: true,

@@ -1,8 +1,9 @@
+import type { PayloadRequest } from 'payload'
+
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
-import type { PayloadRequest } from 'payload'
 import { buildConfig } from 'payload'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
@@ -19,14 +20,6 @@ const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 export default buildConfig({
-  serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL,
-  secret: process.env.PAYLOAD_SECRET || '',
-  db: postgresAdapter({
-    pool: {
-      connectionString: process.env.DATABASE_URI || process.env.DATABASE_URL || '',
-    },
-  }),
-  editor: lexicalEditor(),
   admin: {
     user: Users.slug,
     // Payload's bundled admin UI is permanently off. The Ovok Dashboard
@@ -38,13 +31,22 @@ export default buildConfig({
     },
   },
   collections: [Users, Tenants, Media, Posts, ContentTypes, ContentItems],
+  cors: '*',
+  csrf: [],
+  db: postgresAdapter({
+    pool: {
+      connectionString: process.env.DATABASE_URI || process.env.DATABASE_URL || '',
+    },
+  }),
+  editor: lexicalEditor(),
+  endpoints: [schemaEndpoint],
   plugins: [
     multiTenantPlugin({
       collections: {
+        'content-items': {},
+        'content-types': {},
         media: {},
         posts: {},
-        'content-types': {},
-        'content-items': {},
       },
       tenantField: {
         access: {
@@ -64,11 +66,10 @@ export default buildConfig({
       userHasAccessToAllTenants: () => false,
     }),
   ],
+  secret: process.env.PAYLOAD_SECRET || '',
+  serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL,
+  sharp,
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
-  sharp,
-  cors: '*',
-  csrf: [],
-  endpoints: [schemaEndpoint],
 })
