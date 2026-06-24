@@ -26,7 +26,7 @@ COPY packages/ovok-contracts/src ./packages/ovok-contracts/src
 COPY packages/ovok-contracts/tsconfig.json ./packages/ovok-contracts/tsconfig.json
 COPY apps/ovok-cms/package.json ./apps/ovok-cms/
 
-RUN pnpm install --frozen-lockfile --filter @actimi/ovok-cms...
+RUN pnpm install --frozen-lockfile --ignore-scripts --filter @actimi/ovok-cms...
 
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules

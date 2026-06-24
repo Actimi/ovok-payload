@@ -24,7 +24,7 @@ COPY packages/ovok-contracts/src ./packages/ovok-contracts/src
 COPY packages/ovok-contracts/tsconfig.json ./packages/ovok-contracts/tsconfig.json
 COPY apps/ovok-control-plane/package.json ./apps/ovok-control-plane/
 
-RUN pnpm install --frozen-lockfile --filter @ovok/control-plane...
+RUN pnpm install --frozen-lockfile --ignore-scripts --filter @ovok/control-plane...
 
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
