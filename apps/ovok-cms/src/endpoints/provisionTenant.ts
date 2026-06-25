@@ -1,7 +1,6 @@
 import type { Endpoint } from 'payload'
 
 import { OVOK_INTERNAL_KEY_HEADER, provisionTenantSchema } from '@ovok/contracts'
-import { sql } from 'drizzle-orm'
 
 type TenantRow = {
   active: boolean
@@ -50,36 +49,43 @@ export const provisionTenantEndpoint: Endpoint = {
     }
 
     const { slug, active, medplumProjectId } = parsed.data
-    const drizzle = req.payload.db.drizzle
+    const pool = req.payload.db.pool
 
-    await drizzle.execute(sql`
-      UPDATE "tenants"
-      SET
-        "slug" = "slug" || '-orphan-' || "id"::text,
-        "active" = false,
-        "updated_at" = now()
-      WHERE "slug" = ${slug}
-        AND "medplum_project_id" <> ${medplumProjectId}
-    `)
+    if (!pool) {
+      return Response.json({ error: 'Database unavailable' }, { status: 503 })
+    }
 
-    const existingByMedplum = await drizzle.execute<{ id: number }>(sql`
-      SELECT "id" FROM "tenants" WHERE "medplum_project_id" = ${medplumProjectId} LIMIT 1
-    `)
+    await pool.query(
+      `UPDATE "tenants"
+        SET
+          "slug" = "slug" || '-orphan-' || "id"::text,
+          "active" = false,
+          "updated_at" = now()
+        WHERE "slug" = $1
+          AND "medplum_project_id" <> $2`,
+      [slug, medplumProjectId],
+    )
 
-    const created = (existingByMedplum.rows?.length ?? 0) === 0
+    const existingByMedplum = await pool.query<{ id: number }>(
+      `SELECT "id" FROM "tenants" WHERE "medplum_project_id" = $1 LIMIT 1`,
+      [medplumProjectId],
+    )
 
-    const upsert = await drizzle.execute<TenantRow>(sql`
-      INSERT INTO "tenants" ("medplum_project_id", "slug", "active", "updated_at", "created_at")
-      VALUES (${medplumProjectId}, ${slug}, ${active}, now(), now())
-      ON CONFLICT ("medplum_project_id")
-      DO UPDATE SET
-        "slug" = EXCLUDED."slug",
-        "active" = EXCLUDED."active",
-        "updated_at" = now()
-      RETURNING "id", "slug", "medplum_project_id", "active", "created_at", "updated_at"
-    `)
+    const created = existingByMedplum.rowCount === 0
 
-    const row = upsert.rows?.[0]
+    const upsert = await pool.query<TenantRow>(
+      `INSERT INTO "tenants" ("medplum_project_id", "slug", "active", "updated_at", "created_at")
+        VALUES ($1, $2, $3, now(), now())
+        ON CONFLICT ("medplum_project_id")
+        DO UPDATE SET
+          "slug" = EXCLUDED."slug",
+          "active" = EXCLUDED."active",
+          "updated_at" = now()
+        RETURNING "id", "slug", "medplum_project_id", "active", "created_at", "updated_at"`,
+      [medplumProjectId, slug, active],
+    )
+
+    const row = upsert.rows[0]
     if (!row) {
       return Response.json({ error: 'Provisioning failed' }, { status: 500 })
     }
