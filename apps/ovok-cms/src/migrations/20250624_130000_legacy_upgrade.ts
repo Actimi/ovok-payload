@@ -115,6 +115,24 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
       ON "content_items" USING btree ("tenant_id", "environment", "slug");
     CREATE INDEX IF NOT EXISTS "content_items_tenant_environment_status_idx"
       ON "content_items" USING btree ("tenant_id", "environment", "status");
+    ALTER TABLE "payload_locked_documents_rels"
+      ADD COLUMN IF NOT EXISTS "content_types_id" integer,
+      ADD COLUMN IF NOT EXISTS "content_items_id" integer;
+
+    DO $$ BEGIN
+      ALTER TABLE "payload_locked_documents_rels"
+        ADD CONSTRAINT "payload_locked_documents_rels_content_types_fk"
+        FOREIGN KEY ("content_types_id") REFERENCES "public"."content_types"("id")
+        ON DELETE cascade ON UPDATE no action;
+    EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+    DO $$ BEGIN
+      ALTER TABLE "payload_locked_documents_rels"
+        ADD CONSTRAINT "payload_locked_documents_rels_content_items_fk"
+        FOREIGN KEY ("content_items_id") REFERENCES "public"."content_items"("id")
+        ON DELETE cascade ON UPDATE no action;
+    EXCEPTION WHEN duplicate_object THEN null; END $$;
+
     CREATE UNIQUE INDEX IF NOT EXISTS "posts_tenant_environment_slug_idx"
       ON "posts" USING btree ("tenant_id", "environment", "slug");
   `)
