@@ -57,7 +57,7 @@ export default buildConfig({
   localization: {
     defaultLocale: 'de',
     fallback: true,
-    locales: ['de', 'en'],
+    locales: ['de', 'en', 'fr', 'es'],
   },
   plugins: [
     ovokEnvironmentPlugin(),

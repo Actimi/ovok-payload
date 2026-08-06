@@ -96,22 +96,39 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
       req: proxyReq(tenantId, 'dev'),
     })
 
-    const deDoc = await payload.findByID({
+    await payload.update({
       id: created.id,
       collection: 'release-notes',
-      locale: 'de',
+      data: { title: 'Mise à jour d’août' },
+      locale: 'fr',
       req: proxyReq(tenantId, 'dev'),
     })
 
-    const enDoc = await payload.findByID({
+    await payload.update({
       id: created.id,
       collection: 'release-notes',
-      locale: 'en',
+      data: { title: 'Actualización de agosto' },
+      locale: 'es',
       req: proxyReq(tenantId, 'dev'),
     })
 
-    expect(deDoc.title).toBe('August-Update')
-    expect(enDoc.title).toBe('August update')
+    const titlesByLocale: Record<string, string> = {}
+    for (const locale of ['de', 'en', 'fr', 'es'] as const) {
+      const doc = await payload.findByID({
+        id: created.id,
+        collection: 'release-notes',
+        locale,
+        req: proxyReq(tenantId, 'dev'),
+      })
+      titlesByLocale[locale] = String(doc.title)
+    }
+
+    expect(titlesByLocale).toEqual({
+      de: 'August-Update',
+      en: 'August update',
+      es: 'Actualización de agosto',
+      fr: 'Mise à jour d’août',
+    })
   })
 
   it('should fall back to the default locale when a translation is missing', async () => {

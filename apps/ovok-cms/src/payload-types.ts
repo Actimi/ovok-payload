@@ -99,10 +99,15 @@ export interface Config {
   db: {
     defaultIDType: number;
   };
-  fallbackLocale: ('false' | 'none' | 'null') | false | null | ('de' | 'en') | ('de' | 'en')[];
+  fallbackLocale:
+    | ('false' | 'none' | 'null')
+    | false
+    | null
+    | ('de' | 'en' | 'fr' | 'es')
+    | ('de' | 'en' | 'fr' | 'es')[];
   globals: {};
   globalsSelect: {};
-  locale: 'de' | 'en';
+  locale: 'de' | 'en' | 'fr' | 'es';
   widgets: {
     collections: CollectionsWidget;
   };

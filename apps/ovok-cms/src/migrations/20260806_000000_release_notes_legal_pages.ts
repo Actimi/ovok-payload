@@ -13,7 +13,7 @@ import { sql } from '@payloadcms/db-postgres'
 export async function up({ db }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
     DO $$ BEGIN
-      CREATE TYPE "_locales" AS ENUM('de', 'en');
+      CREATE TYPE "_locales" AS ENUM('de', 'en', 'fr', 'es');
     EXCEPTION WHEN duplicate_object THEN null; END $$;
 
     DO $$ BEGIN
