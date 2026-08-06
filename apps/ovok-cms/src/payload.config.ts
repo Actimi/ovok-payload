@@ -44,6 +44,10 @@ export default buildConfig({
       connectionString: process.env.DATABASE_URI || process.env.DATABASE_URL || '',
     },
     prodMigrations: migrations,
+    // Dev-mode schema push, on by default. Tests set PAYLOAD_DB_PUSH=false so
+    // they run against the migration-built schema — the one production gets —
+    // instead of letting push paper over migration gaps.
+    push: process.env.PAYLOAD_DB_PUSH !== 'false',
   }),
   editor: lexicalEditor(),
   endpoints: [healthEndpoint, provisionTenantEndpoint, schemaEndpoint],

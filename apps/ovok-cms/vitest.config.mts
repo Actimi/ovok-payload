@@ -10,6 +10,9 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['tests/**/*.spec.ts'],
+    // Sets PAYLOAD_SECRET/PAYLOAD_INTERNAL_API_KEY before test modules load —
+    // payload.config.ts reads them at import time.
+    setupFiles: ['tests/setup.ts'],
     testTimeout: 120_000,
     hookTimeout: 120_000,
   },
