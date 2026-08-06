@@ -18,6 +18,8 @@ interface NormalisedField {
   fields?: NormalisedField[]
   hasMany?: boolean
   label: null | string
+  /** True when the field stores one value per configured locale — the dashboard renders language tabs for it. */
+  localized: boolean
   name: string
   options?: Array<{ label: string; value: string }>
   relationTo?: string | string[]
@@ -54,6 +56,7 @@ const normaliseField = (field: Field): NormalisedField | null => {
       ((anyField as { admin?: { description?: unknown } }).admin ?? {}).description,
     ),
     label: stringifyLabel((anyField as { label?: unknown }).label),
+    localized: Boolean((anyField as { localized?: boolean }).localized),
     required: Boolean((anyField as { required?: boolean }).required),
     unique: Boolean((anyField as { unique?: boolean }).unique),
   }
@@ -97,7 +100,19 @@ export const schemaEndpoint: Endpoint = {
       .filter(({ config }) => config.slug !== 'tenants' && config.slug !== 'users')
       .map(({ config }) => normaliseCollection(config))
 
-    return Response.json({ collections }, { headers: { 'Cache-Control': SCHEMA_CACHE_CONTROL } })
+    // Locale roster so the dashboard knows which language tabs to render for
+    // `localized` fields and which locale reads fall back to.
+    const localization = payload.config.localization
+      ? {
+          defaultLocale: payload.config.localization.defaultLocale,
+          locales: payload.config.localization.localeCodes,
+        }
+      : null
+
+    return Response.json(
+      { collections, localization },
+      { headers: { 'Cache-Control': SCHEMA_CACHE_CONTROL } },
+    )
   },
   method: 'get',
   path: '/_ovok/schema',

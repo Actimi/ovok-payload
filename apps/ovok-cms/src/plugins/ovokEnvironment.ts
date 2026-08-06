@@ -11,7 +11,14 @@ import {
 
 export const ENVIRONMENT_FIELD_NAME = 'environment'
 
-const ENVIRONMENT_SCOPED_COLLECTIONS = ['content-types', 'content-items', 'media', 'posts'] as const
+const ENVIRONMENT_SCOPED_COLLECTIONS = [
+  'content-types',
+  'content-items',
+  'media',
+  'posts',
+  'release-notes',
+  'legal-pages',
+] as const
 
 type EnvironmentScopedSlug = (typeof ENVIRONMENT_SCOPED_COLLECTIONS)[number]
 
@@ -78,7 +85,7 @@ const addEnvironmentIndexes = (collection: CollectionConfig): void => {
     })
   }
 
-  if (collection.slug === 'content-items') {
+  if (['content-items', 'legal-pages', 'release-notes'].includes(collection.slug)) {
     const statusIndexExists = collection.indexes.some(
       (idx) =>
         idx.fields.includes('tenant') &&

@@ -10,8 +10,10 @@ import { fileURLToPath } from 'url'
 
 import { ContentItems } from './collections/ContentItems'
 import { ContentTypes } from './collections/ContentTypes'
+import { LegalPages } from './collections/LegalPages'
 import { Media } from './collections/Media'
 import { Posts } from './collections/Posts'
+import { ReleaseNotes } from './collections/ReleaseNotes'
 import { Tenants } from './collections/Tenants'
 import { Users } from './collections/Users'
 import { healthEndpoint } from './endpoints/health'
@@ -34,7 +36,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Tenants, Media, Posts, ContentTypes, ContentItems],
+  collections: [Users, Tenants, Media, Posts, ContentTypes, ContentItems, ReleaseNotes, LegalPages],
   cors: '*',
   csrf: [],
   db: postgresAdapter({
@@ -45,14 +47,24 @@ export default buildConfig({
   }),
   editor: lexicalEditor(),
   endpoints: [healthEndpoint, provisionTenantEndpoint, schemaEndpoint],
+  // Multi-language content (carehub-product-roadmap#895). Fields marked
+  // `localized: true` store one value per locale; reads pick a locale via
+  // `?locale=` and fall back to the default when a translation is missing.
+  localization: {
+    defaultLocale: 'de',
+    fallback: true,
+    locales: ['de', 'en'],
+  },
   plugins: [
     ovokEnvironmentPlugin(),
     multiTenantPlugin({
       collections: {
         'content-items': {},
         'content-types': {},
+        'legal-pages': {},
         media: {},
         posts: {},
+        'release-notes': {},
       },
       tenantField: {
         access: {

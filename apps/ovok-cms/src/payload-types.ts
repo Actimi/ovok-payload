@@ -74,6 +74,8 @@ export interface Config {
     posts: Post;
     'content-types': ContentType;
     'content-items': ContentItem;
+    'release-notes': ReleaseNote;
+    'legal-pages': LegalPage;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -87,6 +89,8 @@ export interface Config {
     posts: PostsSelect<false> | PostsSelect<true>;
     'content-types': ContentTypesSelect<false> | ContentTypesSelect<true>;
     'content-items': ContentItemsSelect<false> | ContentItemsSelect<true>;
+    'release-notes': ReleaseNotesSelect<false> | ReleaseNotesSelect<true>;
+    'legal-pages': LegalPagesSelect<false> | LegalPagesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -95,10 +99,10 @@ export interface Config {
   db: {
     defaultIDType: number;
   };
-  fallbackLocale: null;
+  fallbackLocale: ('false' | 'none' | 'null') | false | null | ('de' | 'en') | ('de' | 'en')[];
   globals: {};
   globalsSelect: {};
-  locale: null;
+  locale: 'de' | 'en';
   widgets: {
     collections: CollectionsWidget;
   };
@@ -183,11 +187,11 @@ export interface Tenant {
  */
 export interface Media {
   id: number;
+  tenant?: (number | null) | Tenant;
   /**
    * Deployment environment. Set from x-ovok-environment header by the Ovok proxy.
    */
   environment: 'dev' | 'staging' | 'prod';
-  tenant?: (number | null) | Tenant;
   alt?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -207,11 +211,11 @@ export interface Media {
  */
 export interface Post {
   id: number;
+  tenant?: (number | null) | Tenant;
   /**
    * Deployment environment. Set from x-ovok-environment header by the Ovok proxy.
    */
   environment: 'dev' | 'staging' | 'prod';
-  tenant?: (number | null) | Tenant;
   title: string;
   slug: string;
   content?: {
@@ -240,11 +244,11 @@ export interface Post {
  */
 export interface ContentType {
   id: number;
+  tenant?: (number | null) | Tenant;
   /**
    * Deployment environment. Set from x-ovok-environment header by the Ovok proxy.
    */
   environment: 'dev' | 'staging' | 'prod';
-  tenant?: (number | null) | Tenant;
   /**
    * Display name shown in the dashboard navigation.
    */
@@ -303,11 +307,11 @@ export interface ContentType {
  */
 export interface ContentItem {
   id: number;
+  tenant?: (number | null) | Tenant;
   /**
    * Deployment environment. Set from x-ovok-environment header by the Ovok proxy.
    */
   environment: 'dev' | 'staging' | 'prod';
-  tenant?: (number | null) | Tenant;
   contentType: number | ContentType;
   title: string;
   /**
@@ -327,6 +331,92 @@ export interface ContentItem {
     | number
     | boolean
     | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "release-notes".
+ */
+export interface ReleaseNote {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  /**
+   * Deployment environment. Set from x-ovok-environment header by the Ovok proxy.
+   */
+  environment: 'dev' | 'staging' | 'prod';
+  title: string;
+  /**
+   * Optional URL-safe identifier for deep links. Unique per tenant and environment when set.
+   */
+  slug?: string | null;
+  /**
+   * Short summary shown in list views and the in-app "What's new" widget.
+   */
+  excerpt?: string | null;
+  body?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Groupings carried over from the AnnounceKit labels.
+   */
+  tags?: ('announcement' | 'new' | 'improved' | 'fixed')[] | null;
+  status: 'draft' | 'published';
+  /**
+   * Publication date shown on the public changelog and used for ordering. Keep the original date on migrated posts.
+   */
+  publishedAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "legal-pages".
+ */
+export interface LegalPage {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  /**
+   * Deployment environment. Set from x-ovok-environment header by the Ovok proxy.
+   */
+  environment: 'dev' | 'staging' | 'prod';
+  /**
+   * Stable URL-safe identifier the dashboards link to, e.g. "terms-and-conditions". Unique per tenant and environment.
+   */
+  slug: string;
+  title: string;
+  body?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  status: 'draft' | 'published';
+  /**
+   * Optional date this version of the document takes effect (shown on the page).
+   */
+  effectiveAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -377,6 +467,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'content-items';
         value: number | ContentItem;
+      } | null)
+    | ({
+        relationTo: 'release-notes';
+        value: number | ReleaseNote;
+      } | null)
+    | ({
+        relationTo: 'legal-pages';
+        value: number | LegalPage;
       } | null);
   globalSlug?: string | null;
   user:
@@ -455,8 +553,8 @@ export interface TenantsSelect<T extends boolean = true> {
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
-  environment?: T;
   tenant?: T;
+  environment?: T;
   alt?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -475,8 +573,8 @@ export interface MediaSelect<T extends boolean = true> {
  * via the `definition` "posts_select".
  */
 export interface PostsSelect<T extends boolean = true> {
-  environment?: T;
   tenant?: T;
+  environment?: T;
   title?: T;
   slug?: T;
   content?: T;
@@ -490,8 +588,8 @@ export interface PostsSelect<T extends boolean = true> {
  * via the `definition` "content-types_select".
  */
 export interface ContentTypesSelect<T extends boolean = true> {
-  environment?: T;
   tenant?: T;
+  environment?: T;
   name?: T;
   pluralName?: T;
   slug?: T;
@@ -525,13 +623,45 @@ export interface ContentTypesSelect<T extends boolean = true> {
  * via the `definition` "content-items_select".
  */
 export interface ContentItemsSelect<T extends boolean = true> {
-  environment?: T;
   tenant?: T;
+  environment?: T;
   contentType?: T;
   title?: T;
   slug?: T;
   status?: T;
   data?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "release-notes_select".
+ */
+export interface ReleaseNotesSelect<T extends boolean = true> {
+  tenant?: T;
+  environment?: T;
+  title?: T;
+  slug?: T;
+  excerpt?: T;
+  body?: T;
+  tags?: T;
+  status?: T;
+  publishedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "legal-pages_select".
+ */
+export interface LegalPagesSelect<T extends boolean = true> {
+  tenant?: T;
+  environment?: T;
+  slug?: T;
+  title?: T;
+  body?: T;
+  status?: T;
+  effectiveAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }
