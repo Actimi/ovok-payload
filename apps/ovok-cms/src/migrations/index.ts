@@ -3,6 +3,7 @@ import * as migration_20250624_120000_add_environment from './20250624_120000_ad
 import * as migration_20250624_130000_legacy_upgrade from './20250624_130000_legacy_upgrade'
 import * as migration_20250624_140000_locked_documents_rels from './20250624_140000_locked_documents_rels'
 import * as migration_20260806_000000_release_notes_legal_pages from './20260806_000000_release_notes_legal_pages'
+import * as migration_20260806_000100_preferences_rels_tenants from './20260806_000100_preferences_rels_tenants'
 
 export const migrations = [
   {
@@ -29,5 +30,10 @@ export const migrations = [
     name: '20260806_000000_release_notes_legal_pages',
     down: migration_20260806_000000_release_notes_legal_pages.down,
     up: migration_20260806_000000_release_notes_legal_pages.up,
+  },
+  {
+    name: '20260806_000100_preferences_rels_tenants',
+    down: migration_20260806_000100_preferences_rels_tenants.down,
+    up: migration_20260806_000100_preferences_rels_tenants.up,
   },
 ]
