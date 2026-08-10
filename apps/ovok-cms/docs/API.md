@@ -58,16 +58,28 @@ Idempotent tenant provisioning (control plane only). Requires `x-ovok-internal-k
 
 ### Collections
 
-| Slug            | Purpose                                       |
-| --------------- | --------------------------------------------- |
-| `tenants`       | Project registry (Payload side)               |
-| `content-types` | Dynamic content type definitions              |
-| `content-items` | Content rows per type                         |
-| `media`         | Uploaded assets (CDN URLs when `CDN_URL` set) |
-| `posts`         | Example blog collection                       |
-| `users`         | Synthetic auth collection (not populated)     |
+| Slug            | Purpose                                                                                  |
+| --------------- | ---------------------------------------------------------------------------------------- |
+| `tenants`       | Project registry (Payload side)                                                          |
+| `content-types` | Dynamic content type definitions                                                         |
+| `content-items` | Content rows per type                                                                    |
+| `media`         | Uploaded assets (CDN URLs when `CDN_URL` set)                                            |
+| `posts`         | Example blog collection                                                                  |
+| `release-notes` | Localized changelog posts (title/excerpt/body per locale, tags, publishedAt)             |
+| `legal-pages`   | Localized legal documents keyed by stable slug (terms-and-conditions, data-privacy, ...) |
+| `users`         | Synthetic auth collection (not populated)                                                |
 
 All tenant-scoped collections include `tenant` (multi-tenant plugin) and `environment` fields.
+
+### Localization
+
+Locales: `de` (default + fallback), `en`, `fr`, `es` — roster in
+`@ovok/contracts` (`CMS_LOCALES`). Localized fields accept/return one value
+per locale: read with `?locale=<code>` (missing translations fall back to
+`de`), read every translation with `?locale=all`, and write one locale per
+request via `?locale=<code>`. `GET /api/_ovok/schema` exposes the roster
+(`localization`) and per-field `localized` flags for form rendering. Adding a
+locale: see `LOCALES.md`.
 
 ## Environment isolation
 
