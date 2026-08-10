@@ -73,10 +73,10 @@ All tenant-scoped collections include `tenant` (multi-tenant plugin) and `enviro
 
 ### Localization
 
-Locales: `de` (default + fallback), `en`, `fr`, `es` — roster in
+Locales: `en` (default + fallback), `de`, `fr`, `es` — roster in
 `@ovok/contracts` (`CMS_LOCALES`). Localized fields accept/return one value
 per locale: read with `?locale=<code>` (missing translations fall back to
-`de`), read every translation with `?locale=all`, and write one locale per
+`en`), read every translation with `?locale=all`, and write one locale per
 request via `?locale=<code>`. `GET /api/_ovok/schema` exposes the roster
 (`localization`) and per-field `localized` flags for form rendering. Adding a
 locale: see `LOCALES.md`.

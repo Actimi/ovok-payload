@@ -15,7 +15,7 @@ export type CmsLocale = (typeof CMS_LOCALES)[number]
 
 export const CmsLocaleSchema = z.enum(CMS_LOCALES)
 
-export const DEFAULT_CMS_LOCALE: CmsLocale = 'de'
+export const DEFAULT_CMS_LOCALE: CmsLocale = 'en'
 
 export const isCmsLocale = (value: null | string | undefined): value is CmsLocale =>
   CmsLocaleSchema.safeParse(value).success

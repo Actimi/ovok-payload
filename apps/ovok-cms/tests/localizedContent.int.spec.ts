@@ -97,29 +97,28 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
     })
   })
 
-  it('should fall back to the default locale when a translation is missing', async () => {
+  it('should fall back to the default locale (en) when a translation is missing', async () => {
     const created = await payload.create({
       collection: 'release-notes',
       data: {
         publishedAt: new Date('2026-08-02T00:00:00.000Z').toISOString(),
         status: 'draft',
-        title: 'Nur Deutsch',
+        title: 'English only',
       },
-      locale: 'de',
+      locale: 'en',
       req: proxyReq(tenantId, 'dev'),
     })
 
     createdReleaseNoteIDs.push(created.id)
 
-    const enDoc = await payload.findByID({
+    const frDoc = await payload.findByID({
       id: created.id,
       collection: 'release-notes',
-      fallbackLocale: 'de',
-      locale: 'en',
+      locale: 'fr',
       req: proxyReq(tenantId, 'dev'),
     })
 
-    expect(enDoc.title).toBe('Nur Deutsch')
+    expect(frDoc.title).toBe('English only')
   })
 
   it('should keep release notes environment-isolated like the other content collections', async () => {
