@@ -21,18 +21,26 @@ src/
     Tenants.ts               # one row per Medplum project (Ovok-managed)
     Media.ts                 # uploads, tenant-scoped
     Posts.ts                 # example content collection
+    ReleaseNotes.ts          # localized changelog posts (carehub roadmap #895)
+    LegalPages.ts            # localized legal documents (terms, privacy, ...)
+    _shared/                 # createLocalizedContentCollection factory
   endpoints/schema.ts        # GET /api/_ovok/schema for dashboard form rendering
   app/                       # Next.js routes that serve Payload's API
 ```
 
 ## Required env
 
-| Var                         | Notes                                                       |
-| --------------------------- | ----------------------------------------------------------- |
-| `DATABASE_URI`              | Dedicated Postgres                                          |
-| `PAYLOAD_SECRET`            | 32+ random chars — `openssl rand -base64 32`                |
-| `PAYLOAD_PUBLIC_SERVER_URL` | Internal URL the Ovok proxy hits                            |
+| Var                         | Notes                                                         |
+| --------------------------- | ------------------------------------------------------------- |
+| `DATABASE_URI`              | Dedicated Postgres                                            |
+| `PAYLOAD_SECRET`            | 32+ random chars — `openssl rand -base64 32`                  |
+| `PAYLOAD_PUBLIC_SERVER_URL` | Internal URL the Ovok proxy hits                              |
 | `PAYLOAD_INTERNAL_API_KEY`  | Shared secret, identical to Ovok's `PAYLOAD_INTERNAL_API_KEY` |
+
+Optional: `PAYLOAD_DB_PUSH=false` disables the dev-mode drizzle schema push so
+the app runs against the migration-built schema (what production gets); tests
+and CI set this. See `docs/LOCALES.md` for the add-a-locale / add-a-collection
+recipes.
 
 See `.env.example`.
 

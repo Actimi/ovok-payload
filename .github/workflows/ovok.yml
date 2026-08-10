@@ -52,11 +52,30 @@ jobs:
     name: ovok-cms (unit)
     runs-on: ubuntu-24.04
     needs: contracts
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ovok_cms_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URI: postgres://postgres:postgres@localhost:5432/ovok_cms_test
+      PAYLOAD_SECRET: test-secret-with-at-least-32-characters-for-ci
+      PAYLOAD_INTERNAL_API_KEY: test-internal-key
+      PAYLOAD_DB_PUSH: 'false'
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
-      - name: Run tests (integration skipped without DATABASE_URI)
+      # The contracts job builds on its own runner; this job needs dist/ too.
+      - run: pnpm --filter @ovok/contracts build
+      - name: Apply migrations (the schema production gets)
+        run: pnpm --filter @actimi/ovok-cms payload migrate
+      - name: Run tests (integration suites run against the service database)
         run: pnpm --filter @actimi/ovok-cms test:int
-        env:
-          PAYLOAD_SECRET: test-secret-with-at-least-32-characters-for-ci
-          PAYLOAD_INTERNAL_API_KEY: test-internal-key

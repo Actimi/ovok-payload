@@ -10,12 +10,18 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['tests/**/*.spec.ts'],
+    // Sets PAYLOAD_SECRET/PAYLOAD_INTERNAL_API_KEY before test modules load —
+    // payload.config.ts reads them at import time.
+    setupFiles: ['tests/setup.ts'],
     testTimeout: 120_000,
     hookTimeout: 120_000,
   },
   resolve: {
     alias: {
       '@payload-config': path.resolve(dirname, './src/payload.config.ts'),
+      // Resolve the workspace package to its source so tests don't depend on
+      // `pnpm --filter @ovok/contracts build` having produced dist/ first.
+      '@ovok/contracts': path.resolve(dirname, '../../packages/ovok-contracts/src/index.ts'),
     },
   },
 })

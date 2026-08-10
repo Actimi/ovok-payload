@@ -1,5 +1,6 @@
 export * from './cache.js'
 export * from './environment.js'
 export * from './headers.js'
+export * from './locales.js'
 export * from './proxy.js'
 export * from './schemas.js'

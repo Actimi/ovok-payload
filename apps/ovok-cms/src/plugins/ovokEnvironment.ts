@@ -1,4 +1,4 @@
-import type { CollectionConfig, Config, Plugin, Where } from 'payload'
+import type { CollectionConfig, Config, Plugin } from 'payload'
 
 import { ENVIRONMENTS } from '@ovok/contracts'
 
@@ -11,20 +11,17 @@ import {
 
 export const ENVIRONMENT_FIELD_NAME = 'environment'
 
-const ENVIRONMENT_SCOPED_COLLECTIONS = ['content-types', 'content-items', 'media', 'posts'] as const
-
-type EnvironmentScopedSlug = (typeof ENVIRONMENT_SCOPED_COLLECTIONS)[number]
-
 export interface OvokEnvironmentPluginConfig {
-  collections?: EnvironmentScopedSlug[]
+  /** Slugs of the collections to environment-scope. Usually derived from the CONTENT_COLLECTIONS registry in payload.config.ts. */
+  collections?: string[]
   enabled?: boolean
 }
 
+const hasNamedField = (collection: CollectionConfig, name: string): boolean =>
+  collection.fields.some((field) => 'name' in field && field.name === name)
+
 const addEnvironmentField = (collection: CollectionConfig): void => {
-  const hasField = collection.fields.some(
-    (field) => 'name' in field && field.name === ENVIRONMENT_FIELD_NAME,
-  )
-  if (hasField) {
+  if (hasNamedField(collection, ENVIRONMENT_FIELD_NAME)) {
     return
   }
 
@@ -58,6 +55,12 @@ const addEnvironmentField = (collection: CollectionConfig): void => {
   })
 }
 
+/**
+ * Index eligibility derives from the collection's own fields — a collection
+ * with a `slug` gets the (tenant, environment, slug) unique index, one with a
+ * `status` gets the (tenant, environment, status) lookup index. No second
+ * registration list to keep in sync.
+ */
 const addEnvironmentIndexes = (collection: CollectionConfig): void => {
   if (!collection.indexes) {
     collection.indexes = []
@@ -71,14 +74,14 @@ const addEnvironmentIndexes = (collection: CollectionConfig): void => {
       idx.fields.includes('slug'),
   )
 
-  if (!slugIndexExists && collection.slug !== 'media') {
+  if (!slugIndexExists && hasNamedField(collection, 'slug')) {
     collection.indexes.push({
       fields: ['tenant', ENVIRONMENT_FIELD_NAME, 'slug'],
       unique: true,
     })
   }
 
-  if (collection.slug === 'content-items') {
+  if (hasNamedField(collection, 'status')) {
     const statusIndexExists = collection.indexes.some(
       (idx) =>
         idx.fields.includes('tenant') &&
@@ -139,14 +142,12 @@ export const ovokEnvironmentPlugin =
       return incomingConfig
     }
 
-    const targetSlugs = new Set<EnvironmentScopedSlug>(
-      pluginConfig.collections ?? ENVIRONMENT_SCOPED_COLLECTIONS,
-    )
+    const targetSlugs = new Set<string>(pluginConfig.collections ?? [])
 
     return {
       ...incomingConfig,
       collections: (incomingConfig.collections ?? []).map((collection) => {
-        if (!targetSlugs.has(collection.slug as EnvironmentScopedSlug)) {
+        if (!targetSlugs.has(collection.slug)) {
           return collection
         }
 
