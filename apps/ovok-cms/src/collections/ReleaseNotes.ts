@@ -1,45 +1,20 @@
-import type { CollectionConfig } from 'payload'
+import { createLocalizedContentCollection } from './_shared/createLocalizedContentCollection'
 
 /**
- * First-class release-notes collection (carehub-product-roadmap#895).
- *
- * Replaces the AnnounceKit changelog feed. `title`/`excerpt`/`body` are
- * localized so one post carries every translation; reads pick a locale via
- * `?locale=` and fall back to the default locale. `tags` keeps AnnounceKit's
- * label/grouping concept alive. `publishedAt` is author-settable so migrated
- * posts keep their original dates — the history matters.
- *
- * Follows the `content-items` conventions: manual draft/published `status`
- * (the public-delivery API filters on it), multi-tenanted via the
- * `multiTenantPlugin` registration and environment-scoped via
- * `ovokEnvironmentPlugin` in payload.config.ts.
+ * Release-notes collection (carehub-product-roadmap#895) — replaces the
+ * AnnounceKit changelog feed. `title`/`excerpt`/`body` are localized so one
+ * post carries every translation; `tags` keeps AnnounceKit's label/grouping
+ * concept alive; `publishedAt` is author-settable so migrated posts keep
+ * their original dates — the history matters.
  */
-export const ReleaseNotes: CollectionConfig = {
+export const ReleaseNotes = createLocalizedContentCollection({
   slug: 'release-notes',
-  access: {
-    create: () => true,
-    delete: () => true,
-    read: () => true,
-    update: () => true,
-  },
-  admin: {
-    useAsTitle: 'title',
-  },
   fields: [
     {
       name: 'title',
       type: 'text',
       localized: true,
       required: true,
-    },
-    {
-      name: 'slug',
-      type: 'text',
-      admin: {
-        description:
-          'Optional URL-safe identifier for deep links. Unique per tenant and environment when set.',
-      },
-      index: true,
     },
     {
       name: 'excerpt',
@@ -69,17 +44,6 @@ export const ReleaseNotes: CollectionConfig = {
       ],
     },
     {
-      name: 'status',
-      type: 'select',
-      defaultValue: 'draft',
-      index: true,
-      options: [
-        { label: 'Draft', value: 'draft' },
-        { label: 'Published', value: 'published' },
-      ],
-      required: true,
-    },
-    {
       name: 'publishedAt',
       type: 'date',
       admin: {
@@ -91,5 +55,8 @@ export const ReleaseNotes: CollectionConfig = {
       required: true,
     },
   ],
-  timestamps: true,
-}
+  slugField: {
+    description:
+      'Optional URL-safe identifier for deep links. Unique per tenant and environment when set.',
+  },
+})

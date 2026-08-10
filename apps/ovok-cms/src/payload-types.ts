@@ -350,11 +350,11 @@ export interface ReleaseNote {
    * Deployment environment. Set from x-ovok-environment header by the Ovok proxy.
    */
   environment: 'dev' | 'staging' | 'prod';
-  title: string;
   /**
    * Optional URL-safe identifier for deep links. Unique per tenant and environment when set.
    */
   slug?: string | null;
+  title: string;
   /**
    * Short summary shown in list views and the in-app "What's new" widget.
    */
@@ -378,11 +378,11 @@ export interface ReleaseNote {
    * Groupings carried over from the AnnounceKit labels.
    */
   tags?: ('announcement' | 'new' | 'improved' | 'fixed')[] | null;
-  status: 'draft' | 'published';
   /**
    * Publication date shown on the public changelog and used for ordering. Keep the original date on migrated posts.
    */
   publishedAt: string;
+  status: 'draft' | 'published';
   updatedAt: string;
   createdAt: string;
 }
@@ -417,11 +417,11 @@ export interface LegalPage {
     };
     [k: string]: unknown;
   } | null;
-  status: 'draft' | 'published';
   /**
    * Optional date this version of the document takes effect (shown on the page).
    */
   effectiveAt?: string | null;
+  status: 'draft' | 'published';
   updatedAt: string;
   createdAt: string;
 }
@@ -645,13 +645,13 @@ export interface ContentItemsSelect<T extends boolean = true> {
 export interface ReleaseNotesSelect<T extends boolean = true> {
   tenant?: T;
   environment?: T;
-  title?: T;
   slug?: T;
+  title?: T;
   excerpt?: T;
   body?: T;
   tags?: T;
-  status?: T;
   publishedAt?: T;
+  status?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -665,8 +665,8 @@ export interface LegalPagesSelect<T extends boolean = true> {
   slug?: T;
   title?: T;
   body?: T;
-  status?: T;
   effectiveAt?: T;
+  status?: T;
   updatedAt?: T;
   createdAt?: T;
 }

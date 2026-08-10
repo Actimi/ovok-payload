@@ -1,5 +1,6 @@
 import type { SharpDependency } from 'payload'
 
+import { CMS_LOCALES, DEFAULT_CMS_LOCALE } from '@ovok/contracts'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
@@ -25,6 +26,17 @@ import { ovokEnvironmentPlugin } from './plugins/ovokEnvironment'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+/**
+ * SINGLE registration point for tenant-scoped content collections. Adding a
+ * collection = create it (usually via createLocalizedContentCollection) and
+ * list it here — multi-tenancy and environment scoping derive from this
+ * array, and the environment plugin derives its slug/status indexes from the
+ * collection's own fields. See docs/LOCALES.md for the full recipe.
+ */
+const CONTENT_COLLECTIONS = [Media, Posts, ContentTypes, ContentItems, ReleaseNotes, LegalPages]
+
+const contentCollectionSlugs = CONTENT_COLLECTIONS.map((collection) => collection.slug)
+
 export default buildConfig({
   admin: {
     user: Users.slug,
@@ -36,7 +48,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Tenants, Media, Posts, ContentTypes, ContentItems, ReleaseNotes, LegalPages],
+  collections: [Users, Tenants, ...CONTENT_COLLECTIONS],
   cors: '*',
   csrf: [],
   db: postgresAdapter({
@@ -54,22 +66,17 @@ export default buildConfig({
   // Multi-language content (carehub-product-roadmap#895). Fields marked
   // `localized: true` store one value per locale; reads pick a locale via
   // `?locale=` and fall back to the default when a translation is missing.
+  // Roster lives in @ovok/contracts; adding a locale also needs an additive
+  // ALTER TYPE migration — see docs/LOCALES.md.
   localization: {
-    defaultLocale: 'de',
+    defaultLocale: DEFAULT_CMS_LOCALE,
     fallback: true,
-    locales: ['de', 'en', 'fr', 'es'],
+    locales: [...CMS_LOCALES],
   },
   plugins: [
-    ovokEnvironmentPlugin(),
+    ovokEnvironmentPlugin({ collections: contentCollectionSlugs }),
     multiTenantPlugin({
-      collections: {
-        'content-items': {},
-        'content-types': {},
-        'legal-pages': {},
-        media: {},
-        posts: {},
-        'release-notes': {},
-      },
+      collections: Object.fromEntries(contentCollectionSlugs.map((slug) => [slug, {}])),
       tenantField: {
         access: {
           // Tenant assignment is driven by the Ovok proxy via the
