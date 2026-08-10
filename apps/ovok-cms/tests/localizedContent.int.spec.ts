@@ -3,31 +3,8 @@ import type { Payload } from 'payload'
 import { getPayload } from 'payload'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
-import {
-  OVOK_ENVIRONMENT_HEADER,
-  OVOK_INTERNAL_KEY_HEADER,
-  OVOK_TENANT_HEADER,
-} from '../src/access/ovokInternal'
 import config from '../src/payload.config'
-
-const hasDatabase = Boolean(process.env.DATABASE_URI || process.env.DATABASE_URL)
-
-const internalHeaders = (tenantId: string, environment: string) => ({
-  [OVOK_ENVIRONMENT_HEADER]: environment,
-  [OVOK_INTERNAL_KEY_HEADER]: process.env.PAYLOAD_INTERNAL_API_KEY ?? 'test-internal-key',
-  [OVOK_TENANT_HEADER]: tenantId,
-})
-
-const proxyReq = (tenantId: string, environment: string) =>
-  ({
-    headers: new Headers(internalHeaders(tenantId, environment)),
-    user: {
-      id: `ovok-proxy:${tenantId}`,
-      collection: 'users',
-      email: 'proxy@ovok.local',
-      tenants: [{ tenant: tenantId }],
-    },
-  }) as any
+import { createTestTenant, deleteTestTenant, hasDatabase, proxyReq, proxyUser } from './helpers'
 
 describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
   let payload: Payload
@@ -37,18 +14,7 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
 
   beforeAll(async () => {
     payload = await getPayload({ config })
-
-    const tenant = await payload.create({
-      collection: 'tenants',
-      data: {
-        slug: `test-localized-${Date.now()}`,
-        active: true,
-        medplumProjectId: `00000000-0000-4000-8001-${Date.now().toString(16).padStart(12, '0')}`,
-      },
-      overrideAccess: true,
-    })
-
-    tenantId = String(tenant.id)
+    tenantId = await createTestTenant(payload, 'test-localized')
   })
 
   afterEach(async () => {
@@ -65,7 +31,7 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
 
   afterAll(async () => {
     if (payload && tenantId) {
-      await payload.delete({ id: tenantId, collection: 'tenants', overrideAccess: true })
+      await deleteTestTenant(payload, tenantId)
     }
     if (payload) {
       await payload.destroy()
@@ -185,6 +151,76 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
     expect(stagingResults.totalDocs).toBe(0)
   })
 
+  it('should never expose one tenant’s release notes or legal pages to another tenant', async () => {
+    const otherTenantId = await createTestTenant(payload, 'test-isolation')
+
+    const note = await payload.create({
+      collection: 'release-notes',
+      data: {
+        publishedAt: new Date('2026-08-06T00:00:00.000Z').toISOString(),
+        status: 'published',
+        title: 'Tenant A only',
+      },
+      req: proxyReq(tenantId, 'dev'),
+    })
+    const page = await payload.create({
+      collection: 'legal-pages',
+      data: {
+        slug: `tenant-a-terms-${Date.now()}`,
+        status: 'published',
+        title: 'Tenant A terms',
+      },
+      req: proxyReq(tenantId, 'dev'),
+    })
+    createdReleaseNoteIDs.push(note.id)
+    createdLegalPageIDs.push(page.id)
+
+    try {
+      // overrideAccess: false is load-bearing — the multi-tenant read filter
+      // is access-control, and Payload's local API bypasses access by default.
+      const notesForOtherTenant = await payload.find({
+        collection: 'release-notes',
+        overrideAccess: false,
+        req: proxyReq(otherTenantId, 'dev'),
+        user: proxyUser(otherTenantId),
+        where: { id: { equals: note.id } },
+      })
+      const pagesForOtherTenant = await payload.find({
+        collection: 'legal-pages',
+        overrideAccess: false,
+        req: proxyReq(otherTenantId, 'dev'),
+        user: proxyUser(otherTenantId),
+        where: { id: { equals: page.id } },
+      })
+
+      expect(notesForOtherTenant.totalDocs).toBe(0)
+      expect(pagesForOtherTenant.totalDocs).toBe(0)
+
+      // Sanity check: the owning tenant CAN read its own documents under the
+      // same access-enforced conditions.
+      const notesForOwner = await payload.find({
+        collection: 'release-notes',
+        overrideAccess: false,
+        req: proxyReq(tenantId, 'dev'),
+        user: proxyUser(tenantId),
+        where: { id: { equals: note.id } },
+      })
+      expect(notesForOwner.totalDocs).toBe(1)
+    } finally {
+      await deleteTestTenant(payload, otherTenantId)
+    }
+  })
+
+  it('should reject unauthenticated access outright (defense in depth)', async () => {
+    await expect(
+      payload.find({
+        collection: 'release-notes',
+        overrideAccess: false,
+        req: { headers: new Headers(), user: null } as never,
+      }),
+    ).rejects.toThrow()
+  })
+
   it('should filter release notes by published status the way public delivery does', async () => {
     const marker = `status-filter-${Date.now()}`
 
@@ -251,8 +287,10 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
     ).rejects.toThrow()
   })
 
-  it('should include the new collections migration in prod migrations', async () => {
+  it('should include the collections and locale migrations in prod migrations', async () => {
     const { migrations } = await import('../src/migrations/index')
-    expect(migrations.map((m) => m.name)).toContain('20260806_000000_release_notes_legal_pages')
+    const names = migrations.map((m) => m.name)
+    expect(names).toContain('20260806_000000_release_notes_legal_pages')
+    expect(names).toContain('20260807_000000_locales_fr_es')
   })
 })

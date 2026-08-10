@@ -19,6 +19,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@payload-config': path.resolve(dirname, './src/payload.config.ts'),
+      // Resolve the workspace package to its source so tests don't depend on
+      // `pnpm --filter @ovok/contracts build` having produced dist/ first.
+      '@ovok/contracts': path.resolve(dirname, '../../packages/ovok-contracts/src/index.ts'),
     },
   },
 })

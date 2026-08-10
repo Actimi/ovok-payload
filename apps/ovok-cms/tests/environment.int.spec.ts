@@ -3,20 +3,8 @@ import type { Payload } from 'payload'
 import { getPayload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import {
-  OVOK_ENVIRONMENT_HEADER,
-  OVOK_INTERNAL_KEY_HEADER,
-  OVOK_TENANT_HEADER,
-} from '../src/access/ovokInternal'
 import config from '../src/payload.config'
-
-const hasDatabase = Boolean(process.env.DATABASE_URI || process.env.DATABASE_URL)
-
-const internalHeaders = (tenantId: string, environment: string) => ({
-  [OVOK_ENVIRONMENT_HEADER]: environment,
-  [OVOK_INTERNAL_KEY_HEADER]: process.env.PAYLOAD_INTERNAL_API_KEY ?? 'test-internal-key',
-  [OVOK_TENANT_HEADER]: tenantId,
-})
+import { createTestTenant, deleteTestTenant, hasDatabase, proxyReq } from './helpers'
 
 describe.skipIf(!hasDatabase)('ovok-cms environment isolation', () => {
   let payload: Payload
@@ -25,18 +13,7 @@ describe.skipIf(!hasDatabase)('ovok-cms environment isolation', () => {
 
   beforeAll(async () => {
     payload = await getPayload({ config })
-
-    const tenant = await payload.create({
-      collection: 'tenants',
-      data: {
-        slug: `test-${Date.now()}`,
-        active: true,
-        medplumProjectId: `00000000-0000-4000-8000-${Date.now().toString(16).padStart(12, '0')}`,
-      },
-      overrideAccess: true,
-    })
-
-    tenantId = String(tenant.id)
+    tenantId = await createTestTenant(payload, 'test-env')
   })
 
   afterAll(async () => {
@@ -46,7 +23,7 @@ describe.skipIf(!hasDatabase)('ovok-cms environment isolation', () => {
     createdContentTypeIDs.length = 0
 
     if (payload && tenantId) {
-      await payload.delete({ id: tenantId, collection: 'tenants', overrideAccess: true })
+      await deleteTestTenant(payload, tenantId)
     }
     if (payload) {
       await payload.destroy()
@@ -62,30 +39,14 @@ describe.skipIf(!hasDatabase)('ovok-cms environment isolation', () => {
         fields: [],
         pluralName: 'Landings',
       },
-      req: {
-        headers: new Headers(internalHeaders(tenantId, 'dev')),
-        user: {
-          id: `ovok-proxy:${tenantId}`,
-          collection: 'users',
-          email: 'proxy@ovok.local',
-          tenants: [{ tenant: tenantId }],
-        },
-      } as any,
+      req: proxyReq(tenantId, 'dev'),
     })
 
     createdContentTypeIDs.push(contentType.id)
 
     const devResults = await payload.find({
       collection: 'content-types',
-      req: {
-        headers: new Headers(internalHeaders(tenantId, 'dev')),
-        user: {
-          id: `ovok-proxy:${tenantId}`,
-          collection: 'users',
-          email: 'proxy@ovok.local',
-          tenants: [{ tenant: tenantId }],
-        },
-      } as any,
+      req: proxyReq(tenantId, 'dev'),
       where: { id: { equals: contentType.id } },
     })
 
@@ -93,15 +54,7 @@ describe.skipIf(!hasDatabase)('ovok-cms environment isolation', () => {
 
     const stagingResults = await payload.find({
       collection: 'content-types',
-      req: {
-        headers: new Headers(internalHeaders(tenantId, 'staging')),
-        user: {
-          id: `ovok-proxy:${tenantId}`,
-          collection: 'users',
-          email: 'proxy@ovok.local',
-          tenants: [{ tenant: tenantId }],
-        },
-      } as any,
+      req: proxyReq(tenantId, 'staging'),
       where: { id: { equals: contentType.id } },
     })
 
