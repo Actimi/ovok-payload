@@ -1,0 +1,103 @@
+name: ovok/ecr
+
+# Build ovok-payload + ovok-control-plane from the monorepo root and push to
+# Actimi ECR (eu-central-1).
+#
+#   staging branch → :staging + :<sha>
+#   main    branch → :prod    + :<sha>
+#
+# Required GitHub secret:
+#   AWS_ECR_ROLE_ARN — ARN of the IAM role GitHub Actions will assume via OIDC
+#                      e.g. arn:aws:iam::975050321524:role/github-actions-ecr
+#
+# ECR repositories (created by terraform):
+#   ovok-payload
+#   ovok-control-plane
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [staging, main]
+    paths:
+      - '.github/workflows/ovok-ecr.yml'
+      - 'apps/ovok-cms/**'
+      - 'apps/ovok-control-plane/**'
+      - 'packages/ovok-contracts/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+
+concurrency:
+  group: ovok-ecr-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AWS_REGION: eu-central-1
+  AWS_ACCOUNT_ID: '975050321524'
+
+jobs:
+  prepare_env:
+    name: Prepare ECR environment
+    runs-on: ubuntu-24.04
+    outputs:
+      env: ${{ steps.set_env.outputs.env }}
+      registry: ${{ steps.set_env.outputs.registry }}
+    steps:
+      - name: Set ENV from branch
+        id: set_env
+        shell: bash
+        run: |
+          case "${GITHUB_REF#refs/heads/}" in
+            staging) ENV=staging ;;
+            main)    ENV=prod ;;
+            *)
+              echo "Only staging and main branches trigger this workflow."
+              exit 1
+              ;;
+          esac
+          echo "env=${ENV}" >> "$GITHUB_OUTPUT"
+          echo "registry=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com" >> "$GITHUB_OUTPUT"
+
+  push:
+    name: Push ${{ matrix.image }} (${{ needs.prepare_env.outputs.env }})
+    needs: prepare_env
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: ovok-payload
+            dockerfile: apps/ovok-cms/Dockerfile
+          - image: ovok-control-plane
+            dockerfile: apps/ovok-control-plane/Dockerfile
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ECR_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        # Pinned to v2.0.1 — same pin as ovok-core (floating v2 moved to node24).
+        uses: aws-actions/amazon-ecr-login@v2.0.1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & push ${{ matrix.image }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ needs.prepare_env.outputs.registry }}/${{ matrix.image }}:${{ needs.prepare_env.outputs.env }}
+            ${{ needs.prepare_env.outputs.registry }}/${{ matrix.image }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.image }}-${{ needs.prepare_env.outputs.env }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}-${{ needs.prepare_env.outputs.env }}
