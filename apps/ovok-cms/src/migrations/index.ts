@@ -5,6 +5,7 @@ import * as migration_20250624_140000_locked_documents_rels from './20250624_140
 import * as migration_20260806_000000_release_notes_legal_pages from './20260806_000000_release_notes_legal_pages'
 import * as migration_20260806_000100_preferences_rels_tenants from './20260806_000100_preferences_rels_tenants'
 import * as migration_20260807_000000_locales_fr_es from './20260807_000000_locales_fr_es'
+import * as migration_20261003_000000_translations from './20261003_000000_translations'
 
 export const migrations = [
   {
@@ -41,5 +42,10 @@ export const migrations = [
     name: '20260807_000000_locales_fr_es',
     down: migration_20260807_000000_locales_fr_es.down,
     up: migration_20260807_000000_locales_fr_es.up,
+  },
+  {
+    name: '20261003_000000_translations',
+    down: migration_20261003_000000_translations.down,
+    up: migration_20261003_000000_translations.up,
   },
 ]
