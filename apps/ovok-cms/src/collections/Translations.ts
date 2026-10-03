@@ -19,7 +19,8 @@ export const Translations = createLocalizedContentCollection({
       name: 'title',
       type: 'text',
       admin: {
-        description: 'What the group is for, shown to authors only, e.g. "Sign-in screen".',
+        description:
+          'What the group is for, e.g. "Sign-in screen". Served publicly like every field.',
       },
       required: true,
     },

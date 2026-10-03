@@ -443,7 +443,7 @@ export interface Translation {
    */
   slug: string;
   /**
-   * What the group is for, shown to authors only, e.g. "Sign-in screen".
+   * What the group is for, e.g. "Sign-in screen". Served publicly like every field.
    */
   title: string;
   /**
