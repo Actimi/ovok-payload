@@ -51,12 +51,12 @@ derive from it — index eligibility comes from whether the collection defines
    into a scratch DB with a dev push, `pg_dump`-diff against a
    migrations-built DB, write the delta as idempotent SQL) and register it.
 4. Regenerate types, add an int spec covering tenant + environment isolation.
-5. To expose it through **public delivery**, add its slug to ovok-core's
-   `PAYLOAD_CMS_PUBLIC_COLLECTIONS` env — published documents then serve from
-   `GET /v1/public/cms/collections/<slug>/items[/<docSlug>]`. If apps read it
-   before sign-in, also add it to ovok-core's `PAYLOAD_CMS_KEYLESS_COLLECTIONS`
-   (unset, that is `legal-pages` and `translations`), which skips the API key
-   for reads that name their tenant.
+5. **Public delivery** serves it with no ovok-core change: every collection
+   except `users` and `tenants` is public, so published documents serve from
+   `GET /v1/public/cms/collections/<slug>/items[/<docSlug>]` with the API key or
+   a signed-in session. If apps read it before sign-in, add it to ovok-core's
+   `PAYLOAD_CMS_KEYLESS_COLLECTIONS` (unset, that is `legal-pages` and
+   `translations`), which skips the API key for reads that name their tenant.
 
 ## `PAYLOAD_DB_PUSH`
 
