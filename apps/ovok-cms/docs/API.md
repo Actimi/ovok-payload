@@ -67,6 +67,7 @@ Idempotent tenant provisioning (control plane only). Requires `x-ovok-internal-k
 | `posts`         | Example blog collection                                                                  |
 | `release-notes` | Localized changelog posts (title/excerpt/body per locale, tags, publishedAt)             |
 | `legal-pages`   | Localized legal documents keyed by stable slug (terms-and-conditions, data-privacy, ...) |
+| `translations`  | UI strings, one group per slug: `strings` rows of `key` + localized `value`              |
 | `users`         | Synthetic auth collection (not populated)                                                |
 
 All tenant-scoped collections include `tenant` (multi-tenant plugin) and `environment` fields.

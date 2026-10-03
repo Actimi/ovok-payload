@@ -76,6 +76,7 @@ export interface Config {
     'content-items': ContentItem;
     'release-notes': ReleaseNote;
     'legal-pages': LegalPage;
+    translations: Translation;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -91,6 +92,7 @@ export interface Config {
     'content-items': ContentItemsSelect<false> | ContentItemsSelect<true>;
     'release-notes': ReleaseNotesSelect<false> | ReleaseNotesSelect<true>;
     'legal-pages': LegalPagesSelect<false> | LegalPagesSelect<true>;
+    translations: TranslationsSelect<false> | TranslationsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -427,6 +429,45 @@ export interface LegalPage {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "translations".
+ */
+export interface Translation {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  /**
+   * Deployment environment. Set from x-ovok-environment header by the Ovok proxy.
+   */
+  environment: 'dev' | 'staging' | 'prod';
+  /**
+   * The group the strings belong to, e.g. "sign-in". Unique per tenant and environment.
+   */
+  slug: string;
+  /**
+   * What the group is for, shown to authors only, e.g. "Sign-in screen".
+   */
+  title: string;
+  /**
+   * One row per string. Apps read a row as "<group slug>.<key>".
+   */
+  strings?:
+    | {
+        /**
+         * The key within the group, e.g. "title"; dots nest, e.g. "errors.required".
+         */
+        key: string;
+        /**
+         * The text in this language. Left empty, readers get the default language text.
+         */
+        value?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  status: 'draft' | 'published';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -480,6 +521,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'legal-pages';
         value: number | LegalPage;
+      } | null)
+    | ({
+        relationTo: 'translations';
+        value: number | Translation;
       } | null);
   globalSlug?: string | null;
   user:
@@ -666,6 +711,26 @@ export interface LegalPagesSelect<T extends boolean = true> {
   title?: T;
   body?: T;
   effectiveAt?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "translations_select".
+ */
+export interface TranslationsSelect<T extends boolean = true> {
+  tenant?: T;
+  environment?: T;
+  slug?: T;
+  title?: T;
+  strings?:
+    | T
+    | {
+        key?: T;
+        value?: T;
+        id?: T;
+      };
   status?: T;
   updatedAt?: T;
   createdAt?: T;

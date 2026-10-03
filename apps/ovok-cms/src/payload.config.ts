@@ -16,6 +16,7 @@ import { Media } from './collections/Media'
 import { Posts } from './collections/Posts'
 import { ReleaseNotes } from './collections/ReleaseNotes'
 import { Tenants } from './collections/Tenants'
+import { Translations } from './collections/Translations'
 import { Users } from './collections/Users'
 import { healthEndpoint } from './endpoints/health'
 import { provisionTenantEndpoint } from './endpoints/provisionTenant'
@@ -33,7 +34,15 @@ const dirname = path.dirname(filename)
  * array, and the environment plugin derives its slug/status indexes from the
  * collection's own fields. See docs/LOCALES.md for the full recipe.
  */
-const CONTENT_COLLECTIONS = [Media, Posts, ContentTypes, ContentItems, ReleaseNotes, LegalPages]
+const CONTENT_COLLECTIONS = [
+  Media,
+  Posts,
+  ContentTypes,
+  ContentItems,
+  ReleaseNotes,
+  LegalPages,
+  Translations,
+]
 
 const contentCollectionSlugs = CONTENT_COLLECTIONS.map((collection) => collection.slug)
 
