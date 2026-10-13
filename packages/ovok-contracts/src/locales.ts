@@ -9,7 +9,7 @@ import { z } from 'zod'
  * `ALTER TYPE "_locales" ADD VALUE IF NOT EXISTS '<code>'` migration in
  * ovok-cms — see apps/ovok-cms/docs/LOCALES.md for the full recipe.
  */
-export const CMS_LOCALES = ['de', 'en', 'fr', 'es'] as const
+export const CMS_LOCALES = ['de', 'en', 'fr', 'es', 'ru', 'ar'] as const
 
 export type CmsLocale = (typeof CMS_LOCALES)[number]
 

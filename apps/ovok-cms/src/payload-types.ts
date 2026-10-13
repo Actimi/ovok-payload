@@ -105,11 +105,11 @@ export interface Config {
     | ('false' | 'none' | 'null')
     | false
     | null
-    | ('de' | 'en' | 'fr' | 'es')
-    | ('de' | 'en' | 'fr' | 'es')[];
+    | ('de' | 'en' | 'fr' | 'es' | 'ru' | 'ar')
+    | ('de' | 'en' | 'fr' | 'es' | 'ru' | 'ar')[];
   globals: {};
   globalsSelect: {};
-  locale: 'de' | 'en' | 'fr' | 'es';
+  locale: 'de' | 'en' | 'fr' | 'es' | 'ru' | 'ar';
   widgets: {
     collections: CollectionsWidget;
   };

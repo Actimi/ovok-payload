@@ -6,6 +6,7 @@ import * as migration_20260806_000000_release_notes_legal_pages from './20260806
 import * as migration_20260806_000100_preferences_rels_tenants from './20260806_000100_preferences_rels_tenants'
 import * as migration_20260807_000000_locales_fr_es from './20260807_000000_locales_fr_es'
 import * as migration_20261003_000000_translations from './20261003_000000_translations'
+import * as migration_20261013_000000_locales_ru_ar from './20261013_000000_locales_ru_ar'
 
 export const migrations = [
   {
@@ -47,5 +48,10 @@ export const migrations = [
     name: '20261003_000000_translations',
     down: migration_20261003_000000_translations.down,
     up: migration_20261003_000000_translations.up,
+  },
+  {
+    name: '20261013_000000_locales_ru_ar',
+    down: migration_20261013_000000_locales_ru_ar.down,
+    up: migration_20261013_000000_locales_ru_ar.up,
   },
 ]

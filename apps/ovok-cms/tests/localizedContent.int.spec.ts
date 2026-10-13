@@ -78,8 +78,24 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
       req: proxyReq(tenantId, 'dev'),
     })
 
+    await payload.update({
+      id: created.id,
+      collection: 'release-notes',
+      data: { title: 'Августовское обновление' },
+      locale: 'ru',
+      req: proxyReq(tenantId, 'dev'),
+    })
+
+    await payload.update({
+      id: created.id,
+      collection: 'release-notes',
+      data: { title: 'تحديث أغسطس' },
+      locale: 'ar',
+      req: proxyReq(tenantId, 'dev'),
+    })
+
     const titlesByLocale: Record<string, string> = {}
-    for (const locale of ['de', 'en', 'fr', 'es'] as const) {
+    for (const locale of ['de', 'en', 'fr', 'es', 'ru', 'ar'] as const) {
       const doc = await payload.findByID({
         id: created.id,
         collection: 'release-notes',
@@ -94,6 +110,8 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
       en: 'August update',
       es: 'Actualización de agosto',
       fr: 'Mise à jour d’août',
+      ru: 'Августовское обновление',
+      ar: 'تحديث أغسطس',
     })
   })
 
@@ -291,5 +309,6 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
     const names = migrations.map((m) => m.name)
     expect(names).toContain('20260806_000000_release_notes_legal_pages')
     expect(names).toContain('20260807_000000_locales_fr_es')
+    expect(names).toContain('20261013_000000_locales_ru_ar')
   })
 })
