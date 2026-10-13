@@ -2,7 +2,7 @@
 
 ## Current roster
 
-`en` (default, fallback target) · `de` · `fr` · `es` — defined once in
+`en` (default, fallback target) · `de` · `fr` · `es` · `ru` · `ar` — defined once in
 `packages/ovok-contracts/src/locales.ts` (`CMS_LOCALES`) and consumed by
 `payload.config.ts`. Fields marked `localized: true` store one value per
 locale; reads pick a locale via `?locale=` and fall back to the default when
