@@ -8,6 +8,7 @@ import * as migration_20260807_000000_locales_fr_es from './20260807_000000_loca
 import * as migration_20261003_000000_translations from './20261003_000000_translations'
 import * as migration_20261013_000000_locales_ru_ar from './20261013_000000_locales_ru_ar'
 import * as migration_20261017_000000_posts_localized from './20261017_000000_posts_localized'
+import * as migration_20261017_010000_locales_all_iso from './20261017_010000_locales_all_iso'
 
 export const migrations = [
   {
@@ -59,5 +60,10 @@ export const migrations = [
     name: '20261017_000000_posts_localized',
     down: migration_20261017_000000_posts_localized.down,
     up: migration_20261017_000000_posts_localized.up,
+  },
+  {
+    name: '20261017_010000_locales_all_iso',
+    down: migration_20261017_010000_locales_all_iso.down,
+    up: migration_20261017_010000_locales_all_iso.up,
   },
 ]
