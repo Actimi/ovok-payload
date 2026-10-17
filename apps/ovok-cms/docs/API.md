@@ -64,7 +64,7 @@ Idempotent tenant provisioning (control plane only). Requires `x-ovok-internal-k
 | `content-types` | Dynamic content type definitions                                                         |
 | `content-items` | Content rows per type                                                                    |
 | `media`         | Uploaded assets (CDN URLs when `CDN_URL` set)                                            |
-| `posts`         | Example blog collection                                                                  |
+| `posts`         | Localized blog posts (title/excerpt/content per locale, media, publishedAt, status)      |
 | `release-notes` | Localized changelog posts (title/excerpt/body per locale, tags, publishedAt)             |
 | `legal-pages`   | Localized legal documents keyed by stable slug (terms-and-conditions, data-privacy, ...) |
 | `translations`  | UI strings, one group per slug: `strings` rows of `key` + localized `value`              |

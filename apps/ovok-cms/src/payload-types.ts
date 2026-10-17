@@ -223,8 +223,15 @@ export interface Post {
    * Deployment environment. Set from x-ovok-environment header by the Ovok proxy.
    */
   environment: 'dev' | 'staging' | 'prod';
-  title: string;
+  /**
+   * Stable URL-safe identifier the website links to, e.g. "hello-world". Unique per tenant and environment.
+   */
   slug: string;
+  title: string;
+  /**
+   * Short summary shown in list views.
+   */
+  excerpt?: string | null;
   content?: {
     root: {
       type: string;
@@ -241,7 +248,11 @@ export interface Post {
     [k: string]: unknown;
   } | null;
   media?: (number | null) | Media;
-  publishedAt?: string | null;
+  /**
+   * Publication date shown on the blog and used for ordering.
+   */
+  publishedAt: string;
+  status: 'draft' | 'published';
   updatedAt: string;
   createdAt: string;
 }
@@ -625,11 +636,13 @@ export interface MediaSelect<T extends boolean = true> {
 export interface PostsSelect<T extends boolean = true> {
   tenant?: T;
   environment?: T;
-  title?: T;
   slug?: T;
+  title?: T;
+  excerpt?: T;
   content?: T;
   media?: T;
   publishedAt?: T;
+  status?: T;
   updatedAt?: T;
   createdAt?: T;
 }

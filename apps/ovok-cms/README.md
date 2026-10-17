@@ -20,7 +20,7 @@ src/
     Users.ts                 # required by Payload, never populated
     Tenants.ts               # one row per Medplum project (Ovok-managed)
     Media.ts                 # uploads, tenant-scoped
-    Posts.ts                 # example content collection
+    Posts.ts                 # localized blog posts (draft/published status)
     ReleaseNotes.ts          # localized changelog posts (carehub roadmap #895)
     LegalPages.ts            # localized legal documents (terms, privacy, ...)
     _shared/                 # createLocalizedContentCollection factory
