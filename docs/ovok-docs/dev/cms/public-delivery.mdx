@@ -81,6 +81,11 @@ curl "https://api.sandbox.ovok.com/v1/public/cms/posts/items?environment=dev&pro
   -H "Authorization: Bearer $OVOK_CMS_KEY"
 ```
 
+`posts` stores `title`, `excerpt` and `content` per locale. Add
+`locale=de` (or `en`, `fr`, `es`, `ru`, `ar`) to pick a translation;
+a missing translation falls back to `en`. Only posts whose `status` is
+`published` are served — drafts stay in the CMS.
+
 ## Get one item
 
 By ID:
