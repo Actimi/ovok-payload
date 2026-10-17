@@ -112,12 +112,12 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
     }
 
     expect(titlesByLocale).toEqual({
+      ar: 'تحديث أغسطس',
       de: 'August-Update',
       en: 'August update',
       es: 'Actualización de agosto',
       fr: 'Mise à jour d’août',
       ru: 'Августовское обновление',
-      ar: 'تحديث أغسطس',
     })
   })
 
