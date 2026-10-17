@@ -2,7 +2,8 @@
 
 ## Current roster
 
-`en` (default, fallback target) · `de` · `fr` · `es` · `ru` · `ar` — defined once in
+Every ISO 639-1 language (183 bare two-letter codes such as `de`, `it`, `zh`),
+with `en` as the default and fallback target — defined once in
 `packages/ovok-contracts/src/locales.ts` (`CMS_LOCALES`) and consumed by
 `payload.config.ts`. Fields marked `localized: true` store one value per
 locale; reads pick a locale via `?locale=` and fall back to the default when

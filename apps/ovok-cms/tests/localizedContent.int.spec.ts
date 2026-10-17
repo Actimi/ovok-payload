@@ -100,8 +100,25 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
       req: proxyReq(tenantId, 'dev'),
     })
 
+    // Two of the locales the full ISO 639-1 roster added.
+    await payload.update({
+      id: created.id,
+      collection: 'release-notes',
+      data: { title: 'Aggiornamento di agosto' },
+      locale: 'it',
+      req: proxyReq(tenantId, 'dev'),
+    })
+
+    await payload.update({
+      id: created.id,
+      collection: 'release-notes',
+      data: { title: '八月更新' },
+      locale: 'zh',
+      req: proxyReq(tenantId, 'dev'),
+    })
+
     const titlesByLocale: Record<string, string> = {}
-    for (const locale of ['de', 'en', 'fr', 'es', 'ru', 'ar'] as const) {
+    for (const locale of ['de', 'en', 'fr', 'es', 'ru', 'ar', 'it', 'zh'] as const) {
       const doc = await payload.findByID({
         id: created.id,
         collection: 'release-notes',
@@ -117,7 +134,9 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
       en: 'August update',
       es: 'Actualización de agosto',
       fr: 'Mise à jour d’août',
+      it: 'Aggiornamento di agosto',
       ru: 'Августовское обновление',
+      zh: '八月更新',
     })
   })
 
