@@ -19,12 +19,29 @@ export const Tenants: CollectionConfig = {
   },
   fields: [
     {
+      name: 'kind',
+      type: 'select',
+      admin: {
+        description: 'project: a Medplum project. system: the one tenant holding platform records.',
+      },
+      defaultValue: 'project',
+      index: true,
+      options: ['project', 'system'],
+      required: true,
+    },
+    {
       name: 'medplumProjectId',
       type: 'text',
-      admin: { description: 'The Medplum top-level Project UUID. Identifies the tenant.' },
+      admin: { description: 'The Medplum top-level Project UUID. Identifies a project tenant.' },
       index: true,
-      required: true,
       unique: true,
+      validate: (
+        value: null | string | undefined,
+        { siblingData }: { siblingData: { kind?: string } },
+      ) =>
+        siblingData?.kind === 'system' ||
+        Boolean(value) ||
+        'A project tenant needs its medplumProjectId.',
     },
     {
       name: 'slug',

@@ -2,6 +2,15 @@ import type { Endpoint, Field, SanitizedCollectionConfig } from 'payload'
 
 import { SCHEMA_CACHE_CONTROL } from '@ovok/contracts'
 
+import { SYSTEM_COLLECTION_SLUGS } from '../collections/systemCollections'
+
+/** Never offered to the dashboard: the tenant registry, Payload users, and platform records. */
+const HIDDEN_COLLECTIONS: ReadonlySet<string> = new Set([
+  'tenants',
+  'users',
+  ...SYSTEM_COLLECTION_SLUGS,
+])
+
 /**
  * Returns a normalised description of every collection so the Ovok Dashboard
  * can render Payload-style CRUD forms without bundling Payload's admin UI.
@@ -97,7 +106,7 @@ const normaliseCollection = (collection: SanitizedCollectionConfig): NormalisedC
 export const schemaEndpoint: Endpoint = {
   handler: ({ payload }) => {
     const collections = Object.values(payload.collections)
-      .filter(({ config }) => config.slug !== 'tenants' && config.slug !== 'users')
+      .filter(({ config }) => !HIDDEN_COLLECTIONS.has(config.slug))
       .map(({ config }) => normaliseCollection(config))
 
     // Locale roster so the dashboard knows which language tabs to render for
