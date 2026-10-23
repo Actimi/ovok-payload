@@ -21,11 +21,11 @@ describe.skipIf(!hasDatabase)('ovok-cms system tenant', () => {
   })
 
   const notice = (dedupKey = crypto.randomUUID()) => ({
+    audience: 'admins',
     dedupKey,
     kind: 'webhook.disabled',
-    severity: 'warning' as const,
-    audience: 'admins',
     medplumProjectId: `project-${crypto.randomUUID()}`,
+    severity: 'warning' as const,
     title: 'A webhook endpoint was switched off',
   })
 
