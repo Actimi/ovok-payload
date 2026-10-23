@@ -39,6 +39,7 @@ export async function createTestTenant(payload: Payload, prefix: string): Promis
     collection: 'tenants',
     data: {
       slug: `${prefix}-${unique.slice(0, 13)}`,
+      kind: 'project',
       active: true,
       medplumProjectId: unique,
     },

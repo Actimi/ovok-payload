@@ -23,6 +23,8 @@ describe.skipIf(!hasDatabase)('ovok-cms system tenant', () => {
   const notice = (dedupKey = crypto.randomUUID()) => ({
     dedupKey,
     kind: 'webhook.disabled',
+    severity: 'warning' as const,
+    audience: 'admins',
     medplumProjectId: `project-${crypto.randomUUID()}`,
     title: 'A webhook endpoint was switched off',
   })
@@ -66,7 +68,7 @@ describe.skipIf(!hasDatabase)('ovok-cms system tenant', () => {
   it('still requires a project tenant to name its project', async () => {
     const create = payload.create({
       collection: 'tenants',
-      data: { slug: `no-project-${crypto.randomUUID().slice(0, 8)}` },
+      data: { slug: `no-project-${crypto.randomUUID().slice(0, 8)}`, kind: 'project' },
       overrideAccess: true,
     })
     await expect(create).rejects.toThrow()
