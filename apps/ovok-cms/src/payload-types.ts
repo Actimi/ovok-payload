@@ -77,6 +77,9 @@ export interface Config {
     'release-notes': ReleaseNote;
     'legal-pages': LegalPage;
     translations: Translation;
+    'email-templates': EmailTemplate;
+    notifications: Notification;
+    'notification-reads': NotificationRead;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -93,6 +96,9 @@ export interface Config {
     'release-notes': ReleaseNotesSelect<false> | ReleaseNotesSelect<true>;
     'legal-pages': LegalPagesSelect<false> | LegalPagesSelect<true>;
     translations: TranslationsSelect<false> | TranslationsSelect<true>;
+    'email-templates': EmailTemplatesSelect<false> | EmailTemplatesSelect<true>;
+    notifications: NotificationsSelect<false> | NotificationsSelect<true>;
+    'notification-reads': NotificationReadsSelect<false> | NotificationReadsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -724,9 +730,13 @@ export interface User {
 export interface Tenant {
   id: number;
   /**
-   * The Medplum top-level Project UUID. Identifies the tenant.
+   * project: a Medplum project. system: the one tenant holding platform records.
    */
-  medplumProjectId: string;
+  kind: 'project' | 'system';
+  /**
+   * The Medplum top-level Project UUID. Identifies a project tenant.
+   */
+  medplumProjectId?: string | null;
   /**
    * Human-readable code from src/tenant-code (Ovok backend).
    */
@@ -1030,6 +1040,100 @@ export interface Translation {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "email-templates".
+ */
+export interface EmailTemplate {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  /**
+   * Deployment environment. Set from x-ovok-environment header by the Ovok proxy.
+   */
+  environment: 'dev' | 'staging' | 'prod';
+  /**
+   * The mail it renders, e.g. "verify-email". Unique per environment.
+   */
+  slug: string;
+  /**
+   * A Handlebars template, e.g. "Verify your email, {{firstName}}".
+   */
+  subject: string;
+  /**
+   * The HTML body, a Handlebars template.
+   */
+  html: string;
+  /**
+   * The plain-text body, for clients that show no HTML.
+   */
+  text?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notifications".
+ */
+export interface Notification {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  /**
+   * Deployment environment. Set from x-ovok-environment header by the Ovok proxy.
+   */
+  environment: 'dev' | 'staging' | 'prod';
+  /**
+   * The project the notice is for.
+   */
+  medplumProjectId: string;
+  /**
+   * What happened, e.g. "webhook.disabled".
+   */
+  kind: string;
+  severity: 'info' | 'warning' | 'error';
+  title: string;
+  body?: string | null;
+  /**
+   * The facts behind the notice, for links and details.
+   */
+  data?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * "admins" for the project's admins, or one Medplum User id.
+   */
+  audience: string;
+  /**
+   * The event it came from, e.g. a Signals webhook-id; a repeat is refused.
+   */
+  dedupKey?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notification-reads".
+ */
+export interface NotificationRead {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  /**
+   * Deployment environment. Set from x-ovok-environment header by the Ovok proxy.
+   */
+  environment: 'dev' | 'staging' | 'prod';
+  notificationId: number;
+  /**
+   * The Medplum User id of the reader.
+   */
+  userId: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -1087,6 +1191,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'translations';
         value: number | Translation;
+      } | null)
+    | ({
+        relationTo: 'email-templates';
+        value: number | EmailTemplate;
+      } | null)
+    | ({
+        relationTo: 'notifications';
+        value: number | Notification;
+      } | null)
+    | ({
+        relationTo: 'notification-reads';
+        value: number | NotificationRead;
       } | null);
   globalSlug?: string | null;
   user:
@@ -1154,6 +1270,7 @@ export interface UsersSelect<T extends boolean = true> {
  * via the `definition` "tenants_select".
  */
 export interface TenantsSelect<T extends boolean = true> {
+  kind?: T;
   medplumProjectId?: T;
   slug?: T;
   active?: T;
@@ -1296,6 +1413,50 @@ export interface TranslationsSelect<T extends boolean = true> {
         id?: T;
       };
   status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "email-templates_select".
+ */
+export interface EmailTemplatesSelect<T extends boolean = true> {
+  tenant?: T;
+  environment?: T;
+  slug?: T;
+  subject?: T;
+  html?: T;
+  text?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notifications_select".
+ */
+export interface NotificationsSelect<T extends boolean = true> {
+  tenant?: T;
+  environment?: T;
+  medplumProjectId?: T;
+  kind?: T;
+  severity?: T;
+  title?: T;
+  body?: T;
+  data?: T;
+  audience?: T;
+  dedupKey?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notification-reads_select".
+ */
+export interface NotificationReadsSelect<T extends boolean = true> {
+  tenant?: T;
+  environment?: T;
+  notificationId?: T;
+  userId?: T;
   updatedAt?: T;
   createdAt?: T;
 }
