@@ -40,6 +40,7 @@ export async function createTestTenant(payload: Payload, prefix: string): Promis
     data: {
       slug: `${prefix}-${unique.slice(0, 13)}`,
       active: true,
+      kind: 'project',
       medplumProjectId: unique,
     },
     overrideAccess: true,
