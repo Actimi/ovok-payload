@@ -76,6 +76,10 @@ export interface Config {
     'content-items': ContentItem;
     'release-notes': ReleaseNote;
     'legal-pages': LegalPage;
+    translations: Translation;
+    'email-templates': EmailTemplate;
+    notifications: Notification;
+    'notification-reads': NotificationRead;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -91,6 +95,10 @@ export interface Config {
     'content-items': ContentItemsSelect<false> | ContentItemsSelect<true>;
     'release-notes': ReleaseNotesSelect<false> | ReleaseNotesSelect<true>;
     'legal-pages': LegalPagesSelect<false> | LegalPagesSelect<true>;
+    translations: TranslationsSelect<false> | TranslationsSelect<true>;
+    'email-templates': EmailTemplatesSelect<false> | EmailTemplatesSelect<true>;
+    notifications: NotificationsSelect<false> | NotificationsSelect<true>;
+    'notification-reads': NotificationReadsSelect<false> | NotificationReadsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -103,11 +111,562 @@ export interface Config {
     | ('false' | 'none' | 'null')
     | false
     | null
-    | ('de' | 'en' | 'fr' | 'es')
-    | ('de' | 'en' | 'fr' | 'es')[];
+    | (
+        | 'de'
+        | 'en'
+        | 'fr'
+        | 'es'
+        | 'ru'
+        | 'ar'
+        | 'aa'
+        | 'ab'
+        | 'ae'
+        | 'af'
+        | 'ak'
+        | 'am'
+        | 'an'
+        | 'as'
+        | 'av'
+        | 'ay'
+        | 'az'
+        | 'ba'
+        | 'be'
+        | 'bg'
+        | 'bi'
+        | 'bm'
+        | 'bn'
+        | 'bo'
+        | 'br'
+        | 'bs'
+        | 'ca'
+        | 'ce'
+        | 'ch'
+        | 'co'
+        | 'cr'
+        | 'cs'
+        | 'cu'
+        | 'cv'
+        | 'cy'
+        | 'da'
+        | 'dv'
+        | 'dz'
+        | 'ee'
+        | 'el'
+        | 'eo'
+        | 'et'
+        | 'eu'
+        | 'fa'
+        | 'ff'
+        | 'fi'
+        | 'fj'
+        | 'fo'
+        | 'fy'
+        | 'ga'
+        | 'gd'
+        | 'gl'
+        | 'gn'
+        | 'gu'
+        | 'gv'
+        | 'ha'
+        | 'he'
+        | 'hi'
+        | 'ho'
+        | 'hr'
+        | 'ht'
+        | 'hu'
+        | 'hy'
+        | 'hz'
+        | 'ia'
+        | 'id'
+        | 'ie'
+        | 'ig'
+        | 'ii'
+        | 'ik'
+        | 'io'
+        | 'is'
+        | 'it'
+        | 'iu'
+        | 'ja'
+        | 'jv'
+        | 'ka'
+        | 'kg'
+        | 'ki'
+        | 'kj'
+        | 'kk'
+        | 'kl'
+        | 'km'
+        | 'kn'
+        | 'ko'
+        | 'kr'
+        | 'ks'
+        | 'ku'
+        | 'kv'
+        | 'kw'
+        | 'ky'
+        | 'la'
+        | 'lb'
+        | 'lg'
+        | 'li'
+        | 'ln'
+        | 'lo'
+        | 'lt'
+        | 'lu'
+        | 'lv'
+        | 'mg'
+        | 'mh'
+        | 'mi'
+        | 'mk'
+        | 'ml'
+        | 'mn'
+        | 'mr'
+        | 'ms'
+        | 'mt'
+        | 'my'
+        | 'na'
+        | 'nb'
+        | 'nd'
+        | 'ne'
+        | 'ng'
+        | 'nl'
+        | 'nn'
+        | 'no'
+        | 'nr'
+        | 'nv'
+        | 'ny'
+        | 'oc'
+        | 'oj'
+        | 'om'
+        | 'or'
+        | 'os'
+        | 'pa'
+        | 'pi'
+        | 'pl'
+        | 'ps'
+        | 'pt'
+        | 'qu'
+        | 'rm'
+        | 'rn'
+        | 'ro'
+        | 'rw'
+        | 'sa'
+        | 'sc'
+        | 'sd'
+        | 'se'
+        | 'sg'
+        | 'si'
+        | 'sk'
+        | 'sl'
+        | 'sm'
+        | 'sn'
+        | 'so'
+        | 'sq'
+        | 'sr'
+        | 'ss'
+        | 'st'
+        | 'su'
+        | 'sv'
+        | 'sw'
+        | 'ta'
+        | 'te'
+        | 'tg'
+        | 'th'
+        | 'ti'
+        | 'tk'
+        | 'tl'
+        | 'tn'
+        | 'to'
+        | 'tr'
+        | 'ts'
+        | 'tt'
+        | 'tw'
+        | 'ty'
+        | 'ug'
+        | 'uk'
+        | 'ur'
+        | 'uz'
+        | 've'
+        | 'vi'
+        | 'vo'
+        | 'wa'
+        | 'wo'
+        | 'xh'
+        | 'yi'
+        | 'yo'
+        | 'za'
+        | 'zh'
+        | 'zu'
+      )
+    | (
+        | 'de'
+        | 'en'
+        | 'fr'
+        | 'es'
+        | 'ru'
+        | 'ar'
+        | 'aa'
+        | 'ab'
+        | 'ae'
+        | 'af'
+        | 'ak'
+        | 'am'
+        | 'an'
+        | 'as'
+        | 'av'
+        | 'ay'
+        | 'az'
+        | 'ba'
+        | 'be'
+        | 'bg'
+        | 'bi'
+        | 'bm'
+        | 'bn'
+        | 'bo'
+        | 'br'
+        | 'bs'
+        | 'ca'
+        | 'ce'
+        | 'ch'
+        | 'co'
+        | 'cr'
+        | 'cs'
+        | 'cu'
+        | 'cv'
+        | 'cy'
+        | 'da'
+        | 'dv'
+        | 'dz'
+        | 'ee'
+        | 'el'
+        | 'eo'
+        | 'et'
+        | 'eu'
+        | 'fa'
+        | 'ff'
+        | 'fi'
+        | 'fj'
+        | 'fo'
+        | 'fy'
+        | 'ga'
+        | 'gd'
+        | 'gl'
+        | 'gn'
+        | 'gu'
+        | 'gv'
+        | 'ha'
+        | 'he'
+        | 'hi'
+        | 'ho'
+        | 'hr'
+        | 'ht'
+        | 'hu'
+        | 'hy'
+        | 'hz'
+        | 'ia'
+        | 'id'
+        | 'ie'
+        | 'ig'
+        | 'ii'
+        | 'ik'
+        | 'io'
+        | 'is'
+        | 'it'
+        | 'iu'
+        | 'ja'
+        | 'jv'
+        | 'ka'
+        | 'kg'
+        | 'ki'
+        | 'kj'
+        | 'kk'
+        | 'kl'
+        | 'km'
+        | 'kn'
+        | 'ko'
+        | 'kr'
+        | 'ks'
+        | 'ku'
+        | 'kv'
+        | 'kw'
+        | 'ky'
+        | 'la'
+        | 'lb'
+        | 'lg'
+        | 'li'
+        | 'ln'
+        | 'lo'
+        | 'lt'
+        | 'lu'
+        | 'lv'
+        | 'mg'
+        | 'mh'
+        | 'mi'
+        | 'mk'
+        | 'ml'
+        | 'mn'
+        | 'mr'
+        | 'ms'
+        | 'mt'
+        | 'my'
+        | 'na'
+        | 'nb'
+        | 'nd'
+        | 'ne'
+        | 'ng'
+        | 'nl'
+        | 'nn'
+        | 'no'
+        | 'nr'
+        | 'nv'
+        | 'ny'
+        | 'oc'
+        | 'oj'
+        | 'om'
+        | 'or'
+        | 'os'
+        | 'pa'
+        | 'pi'
+        | 'pl'
+        | 'ps'
+        | 'pt'
+        | 'qu'
+        | 'rm'
+        | 'rn'
+        | 'ro'
+        | 'rw'
+        | 'sa'
+        | 'sc'
+        | 'sd'
+        | 'se'
+        | 'sg'
+        | 'si'
+        | 'sk'
+        | 'sl'
+        | 'sm'
+        | 'sn'
+        | 'so'
+        | 'sq'
+        | 'sr'
+        | 'ss'
+        | 'st'
+        | 'su'
+        | 'sv'
+        | 'sw'
+        | 'ta'
+        | 'te'
+        | 'tg'
+        | 'th'
+        | 'ti'
+        | 'tk'
+        | 'tl'
+        | 'tn'
+        | 'to'
+        | 'tr'
+        | 'ts'
+        | 'tt'
+        | 'tw'
+        | 'ty'
+        | 'ug'
+        | 'uk'
+        | 'ur'
+        | 'uz'
+        | 've'
+        | 'vi'
+        | 'vo'
+        | 'wa'
+        | 'wo'
+        | 'xh'
+        | 'yi'
+        | 'yo'
+        | 'za'
+        | 'zh'
+        | 'zu'
+      )[];
   globals: {};
   globalsSelect: {};
-  locale: 'de' | 'en' | 'fr' | 'es';
+  locale:
+    | 'de'
+    | 'en'
+    | 'fr'
+    | 'es'
+    | 'ru'
+    | 'ar'
+    | 'aa'
+    | 'ab'
+    | 'ae'
+    | 'af'
+    | 'ak'
+    | 'am'
+    | 'an'
+    | 'as'
+    | 'av'
+    | 'ay'
+    | 'az'
+    | 'ba'
+    | 'be'
+    | 'bg'
+    | 'bi'
+    | 'bm'
+    | 'bn'
+    | 'bo'
+    | 'br'
+    | 'bs'
+    | 'ca'
+    | 'ce'
+    | 'ch'
+    | 'co'
+    | 'cr'
+    | 'cs'
+    | 'cu'
+    | 'cv'
+    | 'cy'
+    | 'da'
+    | 'dv'
+    | 'dz'
+    | 'ee'
+    | 'el'
+    | 'eo'
+    | 'et'
+    | 'eu'
+    | 'fa'
+    | 'ff'
+    | 'fi'
+    | 'fj'
+    | 'fo'
+    | 'fy'
+    | 'ga'
+    | 'gd'
+    | 'gl'
+    | 'gn'
+    | 'gu'
+    | 'gv'
+    | 'ha'
+    | 'he'
+    | 'hi'
+    | 'ho'
+    | 'hr'
+    | 'ht'
+    | 'hu'
+    | 'hy'
+    | 'hz'
+    | 'ia'
+    | 'id'
+    | 'ie'
+    | 'ig'
+    | 'ii'
+    | 'ik'
+    | 'io'
+    | 'is'
+    | 'it'
+    | 'iu'
+    | 'ja'
+    | 'jv'
+    | 'ka'
+    | 'kg'
+    | 'ki'
+    | 'kj'
+    | 'kk'
+    | 'kl'
+    | 'km'
+    | 'kn'
+    | 'ko'
+    | 'kr'
+    | 'ks'
+    | 'ku'
+    | 'kv'
+    | 'kw'
+    | 'ky'
+    | 'la'
+    | 'lb'
+    | 'lg'
+    | 'li'
+    | 'ln'
+    | 'lo'
+    | 'lt'
+    | 'lu'
+    | 'lv'
+    | 'mg'
+    | 'mh'
+    | 'mi'
+    | 'mk'
+    | 'ml'
+    | 'mn'
+    | 'mr'
+    | 'ms'
+    | 'mt'
+    | 'my'
+    | 'na'
+    | 'nb'
+    | 'nd'
+    | 'ne'
+    | 'ng'
+    | 'nl'
+    | 'nn'
+    | 'no'
+    | 'nr'
+    | 'nv'
+    | 'ny'
+    | 'oc'
+    | 'oj'
+    | 'om'
+    | 'or'
+    | 'os'
+    | 'pa'
+    | 'pi'
+    | 'pl'
+    | 'ps'
+    | 'pt'
+    | 'qu'
+    | 'rm'
+    | 'rn'
+    | 'ro'
+    | 'rw'
+    | 'sa'
+    | 'sc'
+    | 'sd'
+    | 'se'
+    | 'sg'
+    | 'si'
+    | 'sk'
+    | 'sl'
+    | 'sm'
+    | 'sn'
+    | 'so'
+    | 'sq'
+    | 'sr'
+    | 'ss'
+    | 'st'
+    | 'su'
+    | 'sv'
+    | 'sw'
+    | 'ta'
+    | 'te'
+    | 'tg'
+    | 'th'
+    | 'ti'
+    | 'tk'
+    | 'tl'
+    | 'tn'
+    | 'to'
+    | 'tr'
+    | 'ts'
+    | 'tt'
+    | 'tw'
+    | 'ty'
+    | 'ug'
+    | 'uk'
+    | 'ur'
+    | 'uz'
+    | 've'
+    | 'vi'
+    | 'vo'
+    | 'wa'
+    | 'wo'
+    | 'xh'
+    | 'yi'
+    | 'yo'
+    | 'za'
+    | 'zh'
+    | 'zu';
   widgets: {
     collections: CollectionsWidget;
   };
@@ -171,9 +730,13 @@ export interface User {
 export interface Tenant {
   id: number;
   /**
-   * The Medplum top-level Project UUID. Identifies the tenant.
+   * project: a Medplum project. system: the one tenant holding platform records.
    */
-  medplumProjectId: string;
+  kind: 'project' | 'system';
+  /**
+   * The Medplum top-level Project UUID. Identifies a project tenant.
+   */
+  medplumProjectId?: string | null;
   /**
    * Human-readable code from src/tenant-code (Ovok backend).
    */
@@ -221,8 +784,15 @@ export interface Post {
    * Deployment environment. Set from x-ovok-environment header by the Ovok proxy.
    */
   environment: 'dev' | 'staging' | 'prod';
-  title: string;
+  /**
+   * Stable URL-safe identifier the website links to, e.g. "hello-world". Unique per tenant and environment.
+   */
   slug: string;
+  title: string;
+  /**
+   * Short summary shown in list views.
+   */
+  excerpt?: string | null;
   content?: {
     root: {
       type: string;
@@ -239,7 +809,11 @@ export interface Post {
     [k: string]: unknown;
   } | null;
   media?: (number | null) | Media;
-  publishedAt?: string | null;
+  /**
+   * Publication date shown on the blog and used for ordering.
+   */
+  publishedAt: string;
+  status: 'draft' | 'published';
   updatedAt: string;
   createdAt: string;
 }
@@ -427,6 +1001,139 @@ export interface LegalPage {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "translations".
+ */
+export interface Translation {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  /**
+   * Deployment environment. Set from x-ovok-environment header by the Ovok proxy.
+   */
+  environment: 'dev' | 'staging' | 'prod';
+  /**
+   * The group the strings belong to, e.g. "sign-in". Unique per tenant and environment.
+   */
+  slug: string;
+  /**
+   * What the group is for, e.g. "Sign-in screen". Served publicly like every field.
+   */
+  title: string;
+  /**
+   * One row per string. Apps read a row as "<group slug>.<key>".
+   */
+  strings?:
+    | {
+        /**
+         * The key within the group, e.g. "title"; dots nest, e.g. "errors.required".
+         */
+        key: string;
+        /**
+         * The text in this language. Left empty, readers get the default language text.
+         */
+        value?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  status: 'draft' | 'published';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "email-templates".
+ */
+export interface EmailTemplate {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  /**
+   * Deployment environment. Set from x-ovok-environment header by the Ovok proxy.
+   */
+  environment: 'dev' | 'staging' | 'prod';
+  /**
+   * The mail it renders, e.g. "verify-email". Unique per environment.
+   */
+  slug: string;
+  /**
+   * A Handlebars template, e.g. "Verify your email, {{firstName}}".
+   */
+  subject: string;
+  /**
+   * The HTML body, a Handlebars template.
+   */
+  html: string;
+  /**
+   * The plain-text body, for clients that show no HTML.
+   */
+  text?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notifications".
+ */
+export interface Notification {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  /**
+   * Deployment environment. Set from x-ovok-environment header by the Ovok proxy.
+   */
+  environment: 'dev' | 'staging' | 'prod';
+  /**
+   * The project the notice is for.
+   */
+  medplumProjectId: string;
+  /**
+   * What happened, e.g. "webhook.disabled".
+   */
+  kind: string;
+  severity: 'info' | 'warning' | 'error';
+  title: string;
+  body?: string | null;
+  /**
+   * The facts behind the notice, for links and details.
+   */
+  data?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * "admins" for the project's admins, or one Medplum User id.
+   */
+  audience: string;
+  /**
+   * The event it came from, e.g. a Signals webhook-id; a repeat is refused.
+   */
+  dedupKey?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notification-reads".
+ */
+export interface NotificationRead {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  /**
+   * Deployment environment. Set from x-ovok-environment header by the Ovok proxy.
+   */
+  environment: 'dev' | 'staging' | 'prod';
+  notificationId: number;
+  /**
+   * The Medplum User id of the reader.
+   */
+  userId: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -480,6 +1187,22 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'legal-pages';
         value: number | LegalPage;
+      } | null)
+    | ({
+        relationTo: 'translations';
+        value: number | Translation;
+      } | null)
+    | ({
+        relationTo: 'email-templates';
+        value: number | EmailTemplate;
+      } | null)
+    | ({
+        relationTo: 'notifications';
+        value: number | Notification;
+      } | null)
+    | ({
+        relationTo: 'notification-reads';
+        value: number | NotificationRead;
       } | null);
   globalSlug?: string | null;
   user:
@@ -547,6 +1270,7 @@ export interface UsersSelect<T extends boolean = true> {
  * via the `definition` "tenants_select".
  */
 export interface TenantsSelect<T extends boolean = true> {
+  kind?: T;
   medplumProjectId?: T;
   slug?: T;
   active?: T;
@@ -580,11 +1304,13 @@ export interface MediaSelect<T extends boolean = true> {
 export interface PostsSelect<T extends boolean = true> {
   tenant?: T;
   environment?: T;
-  title?: T;
   slug?: T;
+  title?: T;
+  excerpt?: T;
   content?: T;
   media?: T;
   publishedAt?: T;
+  status?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -667,6 +1393,70 @@ export interface LegalPagesSelect<T extends boolean = true> {
   body?: T;
   effectiveAt?: T;
   status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "translations_select".
+ */
+export interface TranslationsSelect<T extends boolean = true> {
+  tenant?: T;
+  environment?: T;
+  slug?: T;
+  title?: T;
+  strings?:
+    | T
+    | {
+        key?: T;
+        value?: T;
+        id?: T;
+      };
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "email-templates_select".
+ */
+export interface EmailTemplatesSelect<T extends boolean = true> {
+  tenant?: T;
+  environment?: T;
+  slug?: T;
+  subject?: T;
+  html?: T;
+  text?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notifications_select".
+ */
+export interface NotificationsSelect<T extends boolean = true> {
+  tenant?: T;
+  environment?: T;
+  medplumProjectId?: T;
+  kind?: T;
+  severity?: T;
+  title?: T;
+  body?: T;
+  data?: T;
+  audience?: T;
+  dedupKey?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notification-reads_select".
+ */
+export interface NotificationReadsSelect<T extends boolean = true> {
+  tenant?: T;
+  environment?: T;
+  notificationId?: T;
+  userId?: T;
   updatedAt?: T;
   createdAt?: T;
 }

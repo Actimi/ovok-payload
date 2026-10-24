@@ -11,6 +11,7 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
   let tenantId: string
   const createdReleaseNoteIDs: Array<number | string> = []
   const createdLegalPageIDs: Array<number | string> = []
+  const createdPostIDs: Array<number | string> = []
 
   beforeAll(async () => {
     payload = await getPayload({ config })
@@ -27,6 +28,11 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
       await payload.delete({ id, collection: 'legal-pages', overrideAccess: true })
     }
     createdLegalPageIDs.length = 0
+
+    for (const id of createdPostIDs) {
+      await payload.delete({ id, collection: 'posts', overrideAccess: true })
+    }
+    createdPostIDs.length = 0
   })
 
   afterAll(async () => {
@@ -78,8 +84,41 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
       req: proxyReq(tenantId, 'dev'),
     })
 
+    await payload.update({
+      id: created.id,
+      collection: 'release-notes',
+      data: { title: 'Августовское обновление' },
+      locale: 'ru',
+      req: proxyReq(tenantId, 'dev'),
+    })
+
+    await payload.update({
+      id: created.id,
+      collection: 'release-notes',
+      data: { title: 'تحديث أغسطس' },
+      locale: 'ar',
+      req: proxyReq(tenantId, 'dev'),
+    })
+
+    // Two of the locales the full ISO 639-1 roster added.
+    await payload.update({
+      id: created.id,
+      collection: 'release-notes',
+      data: { title: 'Aggiornamento di agosto' },
+      locale: 'it',
+      req: proxyReq(tenantId, 'dev'),
+    })
+
+    await payload.update({
+      id: created.id,
+      collection: 'release-notes',
+      data: { title: '八月更新' },
+      locale: 'zh',
+      req: proxyReq(tenantId, 'dev'),
+    })
+
     const titlesByLocale: Record<string, string> = {}
-    for (const locale of ['de', 'en', 'fr', 'es'] as const) {
+    for (const locale of ['de', 'en', 'fr', 'es', 'ru', 'ar', 'it', 'zh'] as const) {
       const doc = await payload.findByID({
         id: created.id,
         collection: 'release-notes',
@@ -90,10 +129,14 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
     }
 
     expect(titlesByLocale).toEqual({
+      ar: 'تحديث أغسطس',
       de: 'August-Update',
       en: 'August update',
       es: 'Actualización de agosto',
       fr: 'Mise à jour d’août',
+      it: 'Aggiornamento di agosto',
+      ru: 'Августовское обновление',
+      zh: '八月更新',
     })
   })
 
@@ -256,6 +299,44 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
     expect(results.docs[0]?.id).toBe(published.id)
   })
 
+  it('should serve published posts per locale the way public delivery does', async () => {
+    const marker = `post-${Date.now()}`
+
+    const published = await payload.create({
+      collection: 'posts',
+      data: { slug: `${marker}-published`, excerpt: 'Summary', status: 'published', title: 'Hello' },
+      locale: 'en',
+      req: proxyReq(tenantId, 'dev'),
+    })
+    const draft = await payload.create({
+      collection: 'posts',
+      data: { slug: `${marker}-draft`, title: 'Draft post' },
+      locale: 'en',
+      req: proxyReq(tenantId, 'dev'),
+    })
+    createdPostIDs.push(published.id, draft.id)
+
+    expect(draft.status).toBe('draft')
+    expect(draft.publishedAt).toBeTruthy()
+
+    await payload.update({
+      id: published.id,
+      collection: 'posts',
+      data: { excerpt: 'Zusammenfassung', title: 'Hallo' },
+      locale: 'de',
+      req: proxyReq(tenantId, 'dev'),
+    })
+
+    const where = { and: [{ slug: { like: marker } }, { status: { equals: 'published' } }] }
+    const de = await payload.find({ collection: 'posts', locale: 'de', req: proxyReq(tenantId, 'dev'), where })
+    const fr = await payload.find({ collection: 'posts', locale: 'fr', req: proxyReq(tenantId, 'dev'), where })
+
+    expect(de.docs.map((doc) => [doc.id, doc.title, doc.excerpt])).toEqual([
+      [published.id, 'Hallo', 'Zusammenfassung'],
+    ])
+    expect(fr.docs[0]?.title).toBe('Hello')
+  })
+
   it('should reject a duplicate legal-page slug within the same tenant and environment', async () => {
     const slug = `terms-${Date.now()}`
 
@@ -291,5 +372,7 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
     const names = migrations.map((m) => m.name)
     expect(names).toContain('20260806_000000_release_notes_legal_pages')
     expect(names).toContain('20260807_000000_locales_fr_es')
+    expect(names).toContain('20261013_000000_locales_ru_ar')
+    expect(names).toContain('20261017_000000_posts_localized')
   })
 })

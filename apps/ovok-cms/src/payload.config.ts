@@ -15,7 +15,9 @@ import { LegalPages } from './collections/LegalPages'
 import { Media } from './collections/Media'
 import { Posts } from './collections/Posts'
 import { ReleaseNotes } from './collections/ReleaseNotes'
+import { SYSTEM_COLLECTIONS } from './collections/systemCollections'
 import { Tenants } from './collections/Tenants'
+import { Translations } from './collections/Translations'
 import { Users } from './collections/Users'
 import { healthEndpoint } from './endpoints/health'
 import { provisionTenantEndpoint } from './endpoints/provisionTenant'
@@ -33,9 +35,19 @@ const dirname = path.dirname(filename)
  * array, and the environment plugin derives its slug/status indexes from the
  * collection's own fields. See docs/LOCALES.md for the full recipe.
  */
-const CONTENT_COLLECTIONS = [Media, Posts, ContentTypes, ContentItems, ReleaseNotes, LegalPages]
+const CONTENT_COLLECTIONS = [
+  Media,
+  Posts,
+  ContentTypes,
+  ContentItems,
+  ReleaseNotes,
+  LegalPages,
+  Translations,
+]
 
-const contentCollectionSlugs = CONTENT_COLLECTIONS.map((collection) => collection.slug)
+const tenantScopedSlugs = [...CONTENT_COLLECTIONS, ...SYSTEM_COLLECTIONS].map(
+  (collection) => collection.slug,
+)
 
 export default buildConfig({
   admin: {
@@ -48,7 +60,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Tenants, ...CONTENT_COLLECTIONS],
+  collections: [Users, Tenants, ...CONTENT_COLLECTIONS, ...SYSTEM_COLLECTIONS],
   cors: '*',
   csrf: [],
   db: postgresAdapter({
@@ -74,9 +86,9 @@ export default buildConfig({
     locales: [...CMS_LOCALES],
   },
   plugins: [
-    ovokEnvironmentPlugin({ collections: contentCollectionSlugs }),
+    ovokEnvironmentPlugin({ collections: tenantScopedSlugs }),
     multiTenantPlugin({
-      collections: Object.fromEntries(contentCollectionSlugs.map((slug) => [slug, {}])),
+      collections: Object.fromEntries(tenantScopedSlugs.map((slug) => [slug, {}])),
       tenantField: {
         access: {
           // Tenant assignment is driven by the Ovok proxy via the

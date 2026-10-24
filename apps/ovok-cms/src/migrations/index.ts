@@ -5,6 +5,11 @@ import * as migration_20250624_140000_locked_documents_rels from './20250624_140
 import * as migration_20260806_000000_release_notes_legal_pages from './20260806_000000_release_notes_legal_pages'
 import * as migration_20260806_000100_preferences_rels_tenants from './20260806_000100_preferences_rels_tenants'
 import * as migration_20260807_000000_locales_fr_es from './20260807_000000_locales_fr_es'
+import * as migration_20261003_000000_translations from './20261003_000000_translations'
+import * as migration_20261013_000000_locales_ru_ar from './20261013_000000_locales_ru_ar'
+import * as migration_20261017_000000_posts_localized from './20261017_000000_posts_localized'
+import * as migration_20261017_010000_locales_all_iso from './20261017_010000_locales_all_iso'
+import * as migration_20261023_000000_system_tenant from './20261023_000000_system_tenant'
 
 export const migrations = [
   {
@@ -41,5 +46,30 @@ export const migrations = [
     name: '20260807_000000_locales_fr_es',
     down: migration_20260807_000000_locales_fr_es.down,
     up: migration_20260807_000000_locales_fr_es.up,
+  },
+  {
+    name: '20261003_000000_translations',
+    down: migration_20261003_000000_translations.down,
+    up: migration_20261003_000000_translations.up,
+  },
+  {
+    name: '20261013_000000_locales_ru_ar',
+    down: migration_20261013_000000_locales_ru_ar.down,
+    up: migration_20261013_000000_locales_ru_ar.up,
+  },
+  {
+    name: '20261017_000000_posts_localized',
+    down: migration_20261017_000000_posts_localized.down,
+    up: migration_20261017_000000_posts_localized.up,
+  },
+  {
+    name: '20261017_010000_locales_all_iso',
+    down: migration_20261017_010000_locales_all_iso.down,
+    up: migration_20261017_010000_locales_all_iso.up,
+  },
+  {
+    name: '20261023_000000_system_tenant',
+    down: migration_20261023_000000_system_tenant.down,
+    up: migration_20261023_000000_system_tenant.up,
   },
 ]
