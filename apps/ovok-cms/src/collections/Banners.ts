@@ -1,15 +1,53 @@
+import type { CollectionAfterChangeHook, CollectionConfig } from 'payload'
+
 import { createLocalizedContentCollection } from './_shared/createLocalizedContentCollection'
+
+/**
+ * At most one banner may be PUBLISHED per tenant and environment at a time
+ * (carehub-product-roadmap#1705): the dashboard shows a single customer banner, so publishing one
+ * auto-demotes every other published banner (same tenant + environment) to draft — last-publish-wins.
+ * The demoted banners are kept as drafts, not deleted, so an author can re-publish one later.
+ *
+ * Runs after the change in the same request/transaction, so no reader ever observes two published
+ * banners. Setting the others to `draft` re-fires this hook for them, but the `published` guard makes
+ * that a no-op, so there is no recursion.
+ */
+const unpublishOtherBanners: CollectionAfterChangeHook = async ({ doc, req }) => {
+  if (doc.status !== 'published') {
+    return doc
+  }
+  const tenantId = typeof doc.tenant === 'object' && doc.tenant ? doc.tenant.id : doc.tenant
+  if (tenantId == null) {
+    return doc
+  }
+
+  await req.payload.update({
+    collection: 'banners',
+    where: {
+      and: [
+        { id: { not_equals: doc.id } },
+        { status: { equals: 'published' } },
+        { tenant: { equals: tenantId } },
+        { environment: { equals: doc.environment } },
+      ],
+    },
+    data: { status: 'draft' },
+    req,
+    overrideAccess: true,
+  })
+
+  return doc
+}
 
 /**
  * Customer banners (carehub-product-roadmap#1705): a short announcement shown
  * to every customer in the dashboard for a configurable window. Same authoring
  * shape as a legal page — a localized `title` + rich-text `body` (the survey
  * link lives inside the body as an ordinary hyperlink) — plus the `startDate`/
- * `endDate` that bound when it is displayed. The dashboard lists the published
- * banners and shows the one whose window contains "now"; past `endDate` it
- * hides automatically.
+ * `endDate` that bound when it is displayed. The dashboard shows the one published
+ * banner whose window contains "now"; past `endDate` it hides automatically.
  */
-export const Banners = createLocalizedContentCollection({
+const banners = createLocalizedContentCollection({
   slug: 'banners',
   fields: [
     {
@@ -44,3 +82,11 @@ export const Banners = createLocalizedContentCollection({
     description: 'Optional URL-safe identifier for the banner. Unique per tenant and environment when set.',
   },
 })
+
+export const Banners: CollectionConfig = {
+  ...banners,
+  hooks: {
+    ...banners.hooks,
+    afterChange: [...(banners.hooks?.afterChange ?? []), unpublishOtherBanners],
+  },
+}

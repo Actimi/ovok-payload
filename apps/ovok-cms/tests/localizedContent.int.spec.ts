@@ -415,6 +415,87 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
     expect(results.docs[0]?.id).toBe(published.id)
   })
 
+  it('keeps at most one published banner per tenant+environment (publishing demotes the previous one)', async () => {
+    const marker = `one-published-${Date.now()}`
+    const window = {
+      endDate: new Date('2026-11-30T00:00:00.000Z').toISOString(),
+      startDate: new Date('2026-11-01T00:00:00.000Z').toISOString(),
+    }
+
+    const first = await payload.create({
+      collection: 'banners',
+      data: { slug: `${marker}-a`, status: 'published', title: 'First', ...window },
+      req: proxyReq(tenantId, 'dev'),
+    })
+    const second = await payload.create({
+      collection: 'banners',
+      data: { slug: `${marker}-b`, status: 'published', title: 'Second', ...window },
+      req: proxyReq(tenantId, 'dev'),
+    })
+    createdBannerIDs.push(first.id, second.id)
+
+    // Publishing the second demotes the first to draft — last-publish-wins.
+    const firstAfter = await payload.findByID({ id: first.id, collection: 'banners', req: proxyReq(tenantId, 'dev') })
+    const secondAfter = await payload.findByID({ id: second.id, collection: 'banners', req: proxyReq(tenantId, 'dev') })
+    expect(firstAfter.status).toBe('draft')
+    expect(secondAfter.status).toBe('published')
+
+    const published = await payload.find({
+      collection: 'banners',
+      req: proxyReq(tenantId, 'dev'),
+      where: { and: [{ slug: { like: marker } }, { status: { equals: 'published' } }] },
+    })
+    expect(published.totalDocs).toBe(1)
+    expect(published.docs[0]?.id).toBe(second.id)
+
+    // Re-publishing the first flips them back, still leaving exactly one published.
+    const refirst = await payload.update({
+      id: first.id,
+      collection: 'banners',
+      data: { status: 'published' },
+      req: proxyReq(tenantId, 'dev'),
+    })
+    expect(refirst.status).toBe('published')
+    const secondDemoted = await payload.findByID({ id: second.id, collection: 'banners', req: proxyReq(tenantId, 'dev') })
+    expect(secondDemoted.status).toBe('draft')
+  })
+
+  it('never demotes another tenant’s or another environment’s published banner', async () => {
+    const window = {
+      endDate: new Date('2026-11-30T00:00:00.000Z').toISOString(),
+      startDate: new Date('2026-11-01T00:00:00.000Z').toISOString(),
+    }
+    const otherTenantId = await createTestTenant(payload, 'banner-iso')
+
+    const otherTenantBanner = await payload.create({
+      collection: 'banners',
+      data: { status: 'published', title: 'Other tenant', ...window },
+      req: proxyReq(otherTenantId, 'dev'),
+    })
+    const stagingBanner = await payload.create({
+      collection: 'banners',
+      data: { status: 'published', title: 'Staging', ...window },
+      req: proxyReq(tenantId, 'staging'),
+    })
+    const devBanner = await payload.create({
+      collection: 'banners',
+      data: { status: 'published', title: 'Dev', ...window },
+      req: proxyReq(tenantId, 'dev'),
+    })
+    createdBannerIDs.push(stagingBanner.id, devBanner.id)
+
+    try {
+      // Publishing the dev banner must leave the other tenant's and the staging banner untouched.
+      const otherAfter = await payload.findByID({ id: otherTenantBanner.id, collection: 'banners', overrideAccess: true })
+      const stagingAfter = await payload.findByID({ id: stagingBanner.id, collection: 'banners', overrideAccess: true })
+      expect(otherAfter.status).toBe('published')
+      expect(stagingAfter.status).toBe('published')
+    } finally {
+      await payload.delete({ id: otherTenantBanner.id, collection: 'banners', overrideAccess: true })
+      await deleteTestTenant(payload, otherTenantId)
+    }
+  })
+
   it('should keep banners environment- and tenant-isolated', async () => {
     const window = {
       endDate: new Date('2026-11-30T00:00:00.000Z').toISOString(),
