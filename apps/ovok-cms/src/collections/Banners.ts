@@ -60,6 +60,10 @@ const banners = createLocalizedContentCollection({
       name: 'body',
       type: 'richText',
       localized: true,
+      admin: {
+        description:
+          "Shown in the banner. Use {{startDate}} / {{endDate}} to display the start/end in each viewer's local time.",
+      },
     },
     {
       name: 'startDate',
