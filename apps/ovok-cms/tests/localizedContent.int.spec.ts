@@ -12,6 +12,7 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
   const createdReleaseNoteIDs: Array<number | string> = []
   const createdLegalPageIDs: Array<number | string> = []
   const createdPostIDs: Array<number | string> = []
+  const createdBannerIDs: Array<number | string> = []
 
   beforeAll(async () => {
     payload = await getPayload({ config })
@@ -33,6 +34,11 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
       await payload.delete({ id, collection: 'posts', overrideAccess: true })
     }
     createdPostIDs.length = 0
+
+    for (const id of createdBannerIDs) {
+      await payload.delete({ id, collection: 'banners', overrideAccess: true })
+    }
+    createdBannerIDs.length = 0
   })
 
   afterAll(async () => {
@@ -367,6 +373,192 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
     ).rejects.toThrow()
   })
 
+  it('should store a banner’s display window with a localized title/body and filter by status', async () => {
+    const marker = `banner-${Date.now()}`
+    const start = new Date('2026-11-01T00:00:00.000Z').toISOString()
+    const end = new Date('2026-11-30T00:00:00.000Z').toISOString()
+
+    const draft = await payload.create({
+      collection: 'banners',
+      data: { slug: `${marker}-draft`, status: 'draft', title: 'Draft banner', startDate: start, endDate: end },
+      locale: 'en',
+      req: proxyReq(tenantId, 'dev'),
+    })
+    const published = await payload.create({
+      collection: 'banners',
+      data: { slug: `${marker}-published`, status: 'published', title: 'We value your feedback', startDate: start, endDate: end },
+      locale: 'en',
+      req: proxyReq(tenantId, 'dev'),
+    })
+    createdBannerIDs.push(draft.id, published.id)
+
+    // Window columns persist, and the localized title falls back to en for other locales.
+    expect(new Date(String(published.startDate)).toISOString()).toBe(start)
+    expect(new Date(String(published.endDate)).toISOString()).toBe(end)
+    await payload.update({
+      id: published.id,
+      collection: 'banners',
+      data: { title: 'Wir schätzen Ihr Feedback' },
+      locale: 'de',
+      req: proxyReq(tenantId, 'dev'),
+    })
+    const frDoc = await payload.findByID({ id: published.id, collection: 'banners', locale: 'fr', req: proxyReq(tenantId, 'dev') })
+    expect(frDoc.title).toBe('We value your feedback')
+
+    // Public delivery only serves published banners.
+    const results = await payload.find({
+      collection: 'banners',
+      req: proxyReq(tenantId, 'dev'),
+      where: { and: [{ slug: { like: marker } }, { status: { equals: 'published' } }] },
+    })
+    expect(results.totalDocs).toBe(1)
+    expect(results.docs[0]?.id).toBe(published.id)
+  })
+
+  it('keeps at most one published banner per tenant+environment (publishing demotes the previous one)', async () => {
+    const marker = `one-published-${Date.now()}`
+    const window = {
+      endDate: new Date('2026-11-30T00:00:00.000Z').toISOString(),
+      startDate: new Date('2026-11-01T00:00:00.000Z').toISOString(),
+    }
+
+    const first = await payload.create({
+      collection: 'banners',
+      data: { slug: `${marker}-a`, status: 'published', title: 'First', ...window },
+      req: proxyReq(tenantId, 'dev'),
+    })
+    const second = await payload.create({
+      collection: 'banners',
+      data: { slug: `${marker}-b`, status: 'published', title: 'Second', ...window },
+      req: proxyReq(tenantId, 'dev'),
+    })
+    createdBannerIDs.push(first.id, second.id)
+
+    // Publishing the second demotes the first to draft — last-publish-wins.
+    const firstAfter = await payload.findByID({ id: first.id, collection: 'banners', req: proxyReq(tenantId, 'dev') })
+    const secondAfter = await payload.findByID({ id: second.id, collection: 'banners', req: proxyReq(tenantId, 'dev') })
+    expect(firstAfter.status).toBe('draft')
+    expect(secondAfter.status).toBe('published')
+
+    const published = await payload.find({
+      collection: 'banners',
+      req: proxyReq(tenantId, 'dev'),
+      where: { and: [{ slug: { like: marker } }, { status: { equals: 'published' } }] },
+    })
+    expect(published.totalDocs).toBe(1)
+    expect(published.docs[0]?.id).toBe(second.id)
+
+    // Re-publishing the first flips them back, still leaving exactly one published.
+    const refirst = await payload.update({
+      id: first.id,
+      collection: 'banners',
+      data: { status: 'published' },
+      req: proxyReq(tenantId, 'dev'),
+    })
+    expect(refirst.status).toBe('published')
+    const secondDemoted = await payload.findByID({ id: second.id, collection: 'banners', req: proxyReq(tenantId, 'dev') })
+    expect(secondDemoted.status).toBe('draft')
+  })
+
+  it('never demotes another tenant’s or another environment’s published banner', async () => {
+    const window = {
+      endDate: new Date('2026-11-30T00:00:00.000Z').toISOString(),
+      startDate: new Date('2026-11-01T00:00:00.000Z').toISOString(),
+    }
+    const otherTenantId = await createTestTenant(payload, 'banner-iso')
+
+    const otherTenantBanner = await payload.create({
+      collection: 'banners',
+      data: { status: 'published', title: 'Other tenant', ...window },
+      req: proxyReq(otherTenantId, 'dev'),
+    })
+    const stagingBanner = await payload.create({
+      collection: 'banners',
+      data: { status: 'published', title: 'Staging', ...window },
+      req: proxyReq(tenantId, 'staging'),
+    })
+    const devBanner = await payload.create({
+      collection: 'banners',
+      data: { status: 'published', title: 'Dev', ...window },
+      req: proxyReq(tenantId, 'dev'),
+    })
+    createdBannerIDs.push(stagingBanner.id, devBanner.id)
+
+    try {
+      // Publishing the dev banner must leave the other tenant's and the staging banner untouched.
+      const otherAfter = await payload.findByID({ id: otherTenantBanner.id, collection: 'banners', overrideAccess: true })
+      const stagingAfter = await payload.findByID({ id: stagingBanner.id, collection: 'banners', overrideAccess: true })
+      expect(otherAfter.status).toBe('published')
+      expect(stagingAfter.status).toBe('published')
+    } finally {
+      await payload.delete({ id: otherTenantBanner.id, collection: 'banners', overrideAccess: true })
+      await deleteTestTenant(payload, otherTenantId)
+    }
+  })
+
+  it('should keep banners environment- and tenant-isolated', async () => {
+    const window = {
+      endDate: new Date('2026-11-30T00:00:00.000Z').toISOString(),
+      startDate: new Date('2026-11-01T00:00:00.000Z').toISOString(),
+    }
+    const banner = await payload.create({
+      collection: 'banners',
+      data: { status: 'published', title: 'Dev only banner', ...window },
+      req: proxyReq(tenantId, 'dev'),
+    })
+    createdBannerIDs.push(banner.id)
+
+    const devResults = await payload.find({
+      collection: 'banners',
+      req: proxyReq(tenantId, 'dev'),
+      where: { id: { equals: banner.id } },
+    })
+    const stagingResults = await payload.find({
+      collection: 'banners',
+      req: proxyReq(tenantId, 'staging'),
+      where: { id: { equals: banner.id } },
+    })
+    expect(devResults.totalDocs).toBe(1)
+    expect(stagingResults.totalDocs).toBe(0)
+
+    const otherTenantId = await createTestTenant(payload, 'test-banner-isolation')
+    try {
+      // overrideAccess: false — the multi-tenant read filter is access control.
+      const forOtherTenant = await payload.find({
+        collection: 'banners',
+        overrideAccess: false,
+        req: proxyReq(otherTenantId, 'dev'),
+        user: proxyUser(otherTenantId),
+        where: { id: { equals: banner.id } },
+      })
+      expect(forOtherTenant.totalDocs).toBe(0)
+    } finally {
+      await deleteTestTenant(payload, otherTenantId)
+    }
+  })
+
+  it('should reject a duplicate banner slug within the same tenant and environment', async () => {
+    const slug = `promo-${Date.now()}`
+    const window = {
+      endDate: new Date('2026-11-30T00:00:00.000Z').toISOString(),
+      startDate: new Date('2026-11-01T00:00:00.000Z').toISOString(),
+    }
+    const first = await payload.create({
+      collection: 'banners',
+      data: { slug, status: 'published', title: 'First', ...window },
+      req: proxyReq(tenantId, 'dev'),
+    })
+    createdBannerIDs.push(first.id)
+
+    await expect(
+      payload.create({
+        collection: 'banners',
+        data: { slug, status: 'draft', title: 'Duplicate', ...window },
+        req: proxyReq(tenantId, 'dev'),
+      }),
+    ).rejects.toThrow()
+  })
+
   it('should include the collections and locale migrations in prod migrations', async () => {
     const { migrations } = await import('../src/migrations/index')
     const names = migrations.map((m) => m.name)
@@ -374,5 +566,6 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
     expect(names).toContain('20260807_000000_locales_fr_es')
     expect(names).toContain('20261013_000000_locales_ru_ar')
     expect(names).toContain('20261017_000000_posts_localized')
+    expect(names).toContain('20261112_000000_banners')
   })
 })

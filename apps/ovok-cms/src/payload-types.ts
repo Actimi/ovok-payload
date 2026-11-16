@@ -76,6 +76,7 @@ export interface Config {
     'content-items': ContentItem;
     'release-notes': ReleaseNote;
     'legal-pages': LegalPage;
+    banners: Banner;
     translations: Translation;
     'email-templates': EmailTemplate;
     notifications: Notification;
@@ -95,6 +96,7 @@ export interface Config {
     'content-items': ContentItemsSelect<false> | ContentItemsSelect<true>;
     'release-notes': ReleaseNotesSelect<false> | ReleaseNotesSelect<true>;
     'legal-pages': LegalPagesSelect<false> | LegalPagesSelect<true>;
+    banners: BannersSelect<false> | BannersSelect<true>;
     translations: TranslationsSelect<false> | TranslationsSelect<true>;
     'email-templates': EmailTemplatesSelect<false> | EmailTemplatesSelect<true>;
     notifications: NotificationsSelect<false> | NotificationsSelect<true>;
@@ -1001,6 +1003,49 @@ export interface LegalPage {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "banners".
+ */
+export interface Banner {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  /**
+   * Deployment environment. Set from x-ovok-environment header by the Ovok proxy.
+   */
+  environment: 'dev' | 'staging' | 'prod';
+  /**
+   * Optional URL-safe identifier for the banner. Unique per tenant and environment when set.
+   */
+  slug?: string | null;
+  title: string;
+  body?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * When the banner starts being shown to customers.
+   */
+  startDate: string;
+  /**
+   * When the banner stops being shown. After this it is hidden automatically.
+   */
+  endDate: string;
+  status: 'draft' | 'published';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "translations".
  */
 export interface Translation {
@@ -1187,6 +1232,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'legal-pages';
         value: number | LegalPage;
+      } | null)
+    | ({
+        relationTo: 'banners';
+        value: number | Banner;
       } | null)
     | ({
         relationTo: 'translations';
@@ -1392,6 +1441,22 @@ export interface LegalPagesSelect<T extends boolean = true> {
   title?: T;
   body?: T;
   effectiveAt?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "banners_select".
+ */
+export interface BannersSelect<T extends boolean = true> {
+  tenant?: T;
+  environment?: T;
+  slug?: T;
+  title?: T;
+  body?: T;
+  startDate?: T;
+  endDate?: T;
   status?: T;
   updatedAt?: T;
   createdAt?: T;

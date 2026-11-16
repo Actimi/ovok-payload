@@ -9,6 +9,7 @@ import { buildConfig } from 'payload'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
+import { Banners } from './collections/Banners'
 import { ContentItems } from './collections/ContentItems'
 import { ContentTypes } from './collections/ContentTypes'
 import { LegalPages } from './collections/LegalPages'
@@ -42,6 +43,7 @@ const CONTENT_COLLECTIONS = [
   ContentItems,
   ReleaseNotes,
   LegalPages,
+  Banners,
   Translations,
 ]
 
