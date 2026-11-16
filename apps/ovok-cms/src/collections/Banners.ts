@@ -41,11 +41,12 @@ const unpublishOtherBanners: CollectionAfterChangeHook = async ({ doc, req }) =>
 
 /**
  * Customer banners (carehub-product-roadmap#1705): a short announcement shown
- * to every customer in the dashboard for a configurable window. Same authoring
- * shape as a legal page — a localized `title` + rich-text `body` (the survey
- * link lives inside the body as an ordinary hyperlink) — plus the `startDate`/
- * `endDate` that bound when it is displayed. The dashboard shows the one published
- * banner whose window contains "now"; past `endDate` it hides automatically.
+ * to every customer in the dashboard. Same authoring shape as a legal page — a
+ * localized `title` + rich-text `body` (the survey link lives inside the body as
+ * an ordinary hyperlink) — plus `startDate`/`endDate`. Publishing is the start
+ * signal: a published banner shows immediately and stays up until its `endDate`
+ * passes, then hides automatically. `startDate` does not gate visibility — it is
+ * only the window text, rendered via the {{startDate}} token.
  */
 const banners = createLocalizedContentCollection({
   slug: 'banners',
@@ -70,7 +71,8 @@ const banners = createLocalizedContentCollection({
       type: 'date',
       required: true,
       admin: {
-        description: 'When the banner starts being shown to customers.',
+        description:
+          'When the maintenance begins — shown in the banner text. It does not control when the banner appears: a published banner shows immediately, until the end date.',
       },
     },
     {
