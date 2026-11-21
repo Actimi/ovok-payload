@@ -1,5 +1,28 @@
 import type { CollectionConfig } from 'payload'
 
+import { APIError } from 'payload'
+
+/**
+ * Payload coerces a non-array `fields` to `[]` during field sanitization, which
+ * would store a mis-shaped write as "no fields" behind a 201. Refuse it on the
+ * raw body instead, before that runs.
+ */
+const assertFieldDefinitions = (value: unknown): void => {
+  if (value === undefined || value === null) {
+    return
+  }
+  const isDefinition = (entry: unknown) =>
+    typeof entry === 'object' && entry !== null && !Array.isArray(entry)
+  if (!Array.isArray(value) || !value.every(isDefinition)) {
+    throw new APIError(
+      'Item fields must be a list of field definitions, e.g. [{ "key": "headline", "label": "Headline", "type": "text" }].',
+      422,
+      null,
+      true,
+    )
+  }
+}
+
 /**
  * User-defined content-type registry. Each row describes the shape of a
  * `content-items` document the dashboard editor will render a form for.
@@ -22,6 +45,15 @@ export const ContentTypes: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'name',
+  },
+  hooks: {
+    beforeOperation: [
+      (args) => {
+        // Operations that carry no body leave `data` undefined, which the guard passes.
+        const { data } = args.args as unknown as { data?: { fields?: unknown } }
+        assertFieldDefinitions(data?.fields)
+      },
+    ],
   },
   fields: [
     {
