@@ -83,6 +83,16 @@ export const ContentTypes: CollectionConfig = {
       type: 'textarea',
     },
     {
+      name: 'public',
+      type: 'checkbox',
+      admin: {
+        description:
+          'When on, anyone may read this type\u2019s published items at `/v1/public/cms/<slug>/items` with no API key and no sign-in. Leave off to require one.',
+      },
+      defaultValue: false,
+      label: 'Public',
+    },
+    {
       name: 'fields',
       type: 'array',
       admin: {
