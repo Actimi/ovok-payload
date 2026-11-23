@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { ContentTypes } from '../src/collections/ContentTypes'
 
-const beforeOperation = ContentTypes.hooks!.beforeOperation![0]!
+const beforeOperation = ContentTypes.hooks!.beforeOperation![0]
 
 const write = (data: unknown) => () => beforeOperation({ args: { data } } as never)
 
@@ -10,7 +10,7 @@ const badShape = /list of field definitions/
 
 describe('content-types item fields', () => {
   it('takes a list of field definitions', () => {
-    expect(write({ fields: [{ key: 'headline', label: 'Headline', type: 'text' }] })).not.toThrow()
+    expect(write({ fields: [{ type: 'text', key: 'headline', label: 'Headline' }] })).not.toThrow()
   })
 
   it('takes a write that sets no fields at all', () => {
