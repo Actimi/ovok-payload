@@ -11,6 +11,7 @@ import * as migration_20261017_000000_posts_localized from './20261017_000000_po
 import * as migration_20261017_010000_locales_all_iso from './20261017_010000_locales_all_iso'
 import * as migration_20261023_000000_system_tenant from './20261023_000000_system_tenant'
 import * as migration_20261112_000000_banners from './20261112_000000_banners'
+import * as migration_20261121_000000_content_types_public from './20261121_000000_content_types_public'
 
 export const migrations = [
   {
@@ -77,5 +78,10 @@ export const migrations = [
     name: '20261112_000000_banners',
     down: migration_20261112_000000_banners.down,
     up: migration_20261112_000000_banners.up,
+  },
+  {
+    name: '20261121_000000_content_types_public',
+    down: migration_20261121_000000_content_types_public.down,
+    up: migration_20261121_000000_content_types_public.up,
   },
 ]

@@ -844,6 +844,10 @@ export interface ContentType {
   slug: string;
   description?: string | null;
   /**
+   * When on, anyone may read this type’s published items at `/v1/public/cms/<slug>/items` with no API key and no sign-in. Leave off to require one.
+   */
+  public?: boolean | null;
+  /**
    * Field definitions the item editor will render. Each entry becomes one input in the item form.
    */
   fields?:
@@ -1374,6 +1378,7 @@ export interface ContentTypesSelect<T extends boolean = true> {
   pluralName?: T;
   slug?: T;
   description?: T;
+  public?: T;
   fields?:
     | T
     | {
