@@ -46,15 +46,6 @@ export const ContentTypes: CollectionConfig = {
   admin: {
     useAsTitle: 'name',
   },
-  hooks: {
-    beforeOperation: [
-      (args) => {
-        // Operations that carry no body leave `data` undefined, which the guard passes.
-        const { data } = args.args as unknown as { data?: { fields?: unknown } }
-        assertFieldDefinitions(data?.fields)
-      },
-    ],
-  },
   fields: [
     {
       name: 'name',
@@ -167,5 +158,14 @@ export const ContentTypes: CollectionConfig = {
       label: 'Item fields',
     },
   ],
+  hooks: {
+    beforeOperation: [
+      (args) => {
+        // Operations that carry no body leave `data` undefined, which the guard passes.
+        const { data } = args.args as unknown as { data?: { fields?: unknown } }
+        assertFieldDefinitions(data?.fields)
+      },
+    ],
+  },
   timestamps: true,
 }
