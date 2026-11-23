@@ -380,13 +380,13 @@ describe.skipIf(!hasDatabase)('ovok-cms localized content collections', () => {
 
     const draft = await payload.create({
       collection: 'banners',
-      data: { slug: `${marker}-draft`, status: 'draft', title: 'Draft banner', startDate: start, endDate: end },
+      data: { slug: `${marker}-draft`, endDate: end, startDate: start, status: 'draft', title: 'Draft banner' },
       locale: 'en',
       req: proxyReq(tenantId, 'dev'),
     })
     const published = await payload.create({
       collection: 'banners',
-      data: { slug: `${marker}-published`, status: 'published', title: 'We value your feedback', startDate: start, endDate: end },
+      data: { slug: `${marker}-published`, endDate: end, startDate: start, status: 'published', title: 'We value your feedback' },
       locale: 'en',
       req: proxyReq(tenantId, 'dev'),
     })

@@ -23,6 +23,9 @@ const unpublishOtherBanners: CollectionAfterChangeHook = async ({ doc, req }) =>
 
   await req.payload.update({
     collection: 'banners',
+    data: { status: 'draft' },
+    overrideAccess: true,
+    req,
     where: {
       and: [
         { id: { not_equals: doc.id } },
@@ -31,9 +34,6 @@ const unpublishOtherBanners: CollectionAfterChangeHook = async ({ doc, req }) =>
         { environment: { equals: doc.environment } },
       ],
     },
-    data: { status: 'draft' },
-    req,
-    overrideAccess: true,
   })
 
   return doc
@@ -60,28 +60,28 @@ const banners = createLocalizedContentCollection({
     {
       name: 'body',
       type: 'richText',
-      localized: true,
       admin: {
         description:
           "Shown in the banner. Use {{startDate}} / {{endDate}} to display the start/end in each viewer's local time.",
       },
+      localized: true,
     },
     {
       name: 'startDate',
       type: 'date',
-      required: true,
       admin: {
         description:
           'When the maintenance begins — shown in the banner text. It does not control when the banner appears: a published banner shows immediately, until the end date.',
       },
+      required: true,
     },
     {
       name: 'endDate',
       type: 'date',
-      required: true,
       admin: {
         description: 'When the banner stops being shown. After this it is hidden automatically.',
       },
+      required: true,
     },
   ],
   slugField: {
